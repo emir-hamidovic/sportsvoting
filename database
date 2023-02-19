@@ -1,0 +1,5 @@
+Players
+ID PlayerID  Name    Position    TeamID    Height  Weight  Age GP MPG  PPG RPG APG SPG BPG FG% 3FG% FT% TO College
+
+Teams
+ID TeamAbbr Name Conference Logo
