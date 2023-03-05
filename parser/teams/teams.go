@@ -28,19 +28,14 @@ func ParseTeams(db database.Database) error {
 		return err
 	}
 
-	teams, err := ParseIteratively(allTeams)
-	if err != nil {
-		return err
-	}
-
 	stmt, err := db.PrepareStatementForTeamInsert()
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	for _, team := range teams {
-		_, err = stmt.Exec(team.TeamAbbr, team.Name, team.Logo, team.WinLossPct*100, team.Playoffs, team.DivisionTitles, team.ConferenceTitles, team.Championships)
+	for _, team := range allTeams {
+		_, err = stmt.Exec(team.TeamAbbr, team.Name, team.Logo, team.WinLossPct, team.Playoffs, team.DivisionTitles, team.ConferenceTitles, team.Championships)
 		if err != nil {
 			return err
 		}
@@ -89,32 +84,33 @@ func findBasicTeamInfo(doc *goquery.Document, teams []Teams) []Teams {
 			divtitles, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_division_champion']").Text()), 10, 64)
 			conftitles, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_conference_champion']").Text()), 10, 64)
 			championships, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_league_champion']").Text()), 10, 64)
-			teams = append(teams, Teams{Name: name, TeamAbbr: abbr, WinLossPct: winlosspct, Playoffs: playoffs, DivisionTitles: divtitles, ConferenceTitles: conftitles, Championships: championships})
+			logo, err := getLogoForTeam(abbr)
+			if err != nil {
+				return
+			}
+
+			teams = append(teams, Teams{Name: name, TeamAbbr: abbr, WinLossPct: winlosspct * 100, Playoffs: playoffs, DivisionTitles: divtitles, ConferenceTitles: conftitles, Championships: championships, Logo: logo})
+			time.Sleep(4 * time.Second)
 		}
 	})
 
 	return teams
 }
 
-func ParseIteratively(teams []Teams) ([]Teams, error) {
-	for i, team := range teams {
-		url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s", team.TeamAbbr)
-		res, err := parser.SendRequest(url)
-		if err != nil {
-			return nil, err
-		}
-		defer res.Body.Close()
+func getLogoForTeam(abbr string) (string, error) {
+	url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s", abbr)
+	res, err := parser.SendRequest(url)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
 
-		doc, err := goquery.NewDocumentFromReader(res.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		teams[i].Logo, _ = doc.Find("img.teamlogo").Attr("src")
-		fmt.Println(teams[i])
-
-		time.Sleep(4 * time.Second)
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return "", err
 	}
 
-	return teams, nil
+	logo, _ := doc.Find("img.teamlogo").Attr("src")
+
+	return logo, nil
 }
