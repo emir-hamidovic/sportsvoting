@@ -39,19 +39,13 @@ func ParsePlayers(db database.Database) error {
 	}
 	fmt.Println("Players parsed")
 
-	players, err := ParseIteratively(allPlayers)
+	players, err := parseIteratively(allPlayers)
 	if err != nil {
 		return err
 	}
-
-	stmt, err := db.PrepareStatementForPlayerInsert()
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
 
 	for _, player := range players {
-		_, err = stmt.Exec(player.ID, player.Name, player.College, player.TeamAbbr, player.Height, player.Weight, player.Age, player.Games, player.Minutes, player.Points, player.Rebounds, player.Assists, player.Steals, player.Blocks, player.Turnovers, player.FGPercentage*100, player.FTPercentage*100, player.ThreeFGPercentage*100)
+		_, err = db.InsertPlayer(player.ID, player.Name, player.College, player.TeamAbbr, player.Height, player.Weight, player.Age, player.Games, player.Minutes, player.Points, player.Rebounds, player.Assists, player.Steals, player.Blocks, player.Turnovers, player.FGPercentage*100, player.FTPercentage*100, player.ThreeFGPercentage*100)
 		if err != nil {
 			return err
 		}
@@ -132,7 +126,7 @@ func getEndYearOfTheSeason() string {
 	return currentSeason
 }
 
-func ParseIteratively(players []Player) ([]Player, error) {
+func parseIteratively(players []Player) ([]Player, error) {
 	for i, player := range players {
 		url := fmt.Sprintf("https://www.basketball-reference.com/players/%c/%s.html", player.ID[0], player.ID)
 		res, err := parser.SendRequest(url)
@@ -146,9 +140,14 @@ func ParseIteratively(players []Player) ([]Player, error) {
 			return nil, err
 		}
 
-		firstRow := doc.Find("#per_game").First().Find("tbody tr").Last()
-		players[i] = fillPlayerInfoForSeason(firstRow, player)
-		fmt.Printf("%s stats in the current season: %s ID, %s college, %s teamabbr %s height %s weight %d age %d games %.1f minutes %.1f points, %.1f rebounds, %.1f assists, %.1f blocks, %.1f steals %.1f turnovers %.1f fg %.1f ft %.1f 3pt per game\n", player.Name, player.ID, players[i].College, players[i].TeamAbbr, players[i].Height, players[i].Weight, players[i].Age, players[i].Games, players[i].Minutes, players[i].Points, players[i].Rebounds, players[i].Assists, players[i].Blocks, players[i].Steals, players[i].Turnovers, players[i].FGPercentage*100, players[i].FTPercentage*100, players[i].ThreeFGPercentage*100)
+		currentSeasonRow := doc.Find("#per_game").First().Find("tbody tr.full_table").Last()
+		var currentTeam string
+		if currentSeasonRow.Find("td[data-stat='team_id']").Text() == "TOT" {
+			currentTeam = doc.Find("#per_game").First().Find("tbody tr").Last().Find("td[data-stat='team_id']").Text()
+		}
+
+		players[i] = fillPlayerInfoForSeason(currentSeasonRow, player, currentTeam)
+		fmt.Printf("%s stats in the current season: %s ID, %s college, %s teamabbr, %s height, %s weight, %d age, %d games, %.1f minutes, %.1f points, %.1f rebounds, %.1f assists, %.1f blocks, %.1f steals %.1f turnovers, %.1f fg, %.1f ft, %.1f 3pt\n", player.Name, player.ID, players[i].College, players[i].TeamAbbr, players[i].Height, players[i].Weight, players[i].Age, players[i].Games, players[i].Minutes, players[i].Points, players[i].Rebounds, players[i].Assists, players[i].Blocks, players[i].Steals, players[i].Turnovers, players[i].FGPercentage*100, players[i].FTPercentage*100, players[i].ThreeFGPercentage*100)
 
 		// Wait for 5 seconds before sending the next request to try avoiding the rate limit of 20req/min
 		time.Sleep(5 * time.Second)
@@ -157,38 +156,12 @@ func ParseIteratively(players []Player) ([]Player, error) {
 	return players, nil
 }
 
-/*
-func isPlayerIsPlayingInTheCurrentSeason(row *goquery.Selection) bool {
-	currentSeason := getCurrentSeasonFull()
-	season := strings.TrimSpace(row.Find("th[data-stat='season'] a").Text())
-	return season == currentSeason
-}
-
-func getCurrentSeasonFull() string {
-	today := time.Now()
-	year := today.Year()
-	month := int(today.Month())
-	var currentSeason string
-	if month < 10 {
-		currentSeason = fmt.Sprintf("%d-%d", year-1, year%100)
+func fillPlayerInfoForSeason(row *goquery.Selection, player Player, currentTeam string) Player {
+	if currentTeam == "" {
+		player.TeamAbbr = getOldTeamAbbreviation(strings.TrimSpace(row.Find("td[data-stat='team_id']").Text()))
 	} else {
-		currentSeason = fmt.Sprintf("%d-%d", year, (year+1)%100)
+		player.TeamAbbr = getOldTeamAbbreviation(currentTeam)
 	}
-
-	return currentSeason
-}*/
-
-func fillPlayerInfoForSeason(row *goquery.Selection, player Player) Player {
-	player.TeamAbbr = strings.TrimSpace(row.Find("td[data-stat='team_id']").Text())
-	switch player.TeamAbbr {
-	case "NOP":
-		player.TeamAbbr = "NOH"
-	case "CHO":
-		player.TeamAbbr = "CHA"
-	case "BRK":
-		player.TeamAbbr = "NJN"
-	}
-
 	player.Games, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='g']").Text()), 10, 64)
 	player.Age, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='age']").Text()), 10, 64)
 	player.Minutes, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='mp_per_g']").Text()), 64)
@@ -203,4 +176,87 @@ func fillPlayerInfoForSeason(row *goquery.Selection, player Player) Player {
 	player.FTPercentage, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='ft_pct']").Text()), 64)
 
 	return player
+}
+
+func getOldTeamAbbreviation(abbr string) string {
+	switch abbr {
+	case "NOP":
+		return "NOH"
+	case "CHO":
+		return "CHA"
+	case "BRK":
+		return "NJN"
+	}
+
+	return abbr
+}
+
+func ParseBoxScores(db database.Database) error {
+	url := "https://www.basketball-reference.com/boxscores"
+	res, err := parser.SendRequest(url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return err
+	}
+
+	divs := doc.Find("div.game_summaries > div.game_summary")
+	divs.Each(func(i int, row *goquery.Selection) {
+		var players []Player
+		winningTeam := row.Find("table.teams > tbody > tr.winner")
+		players, err := appendPlayersFromTodaysPlayedGames(players, winningTeam, db)
+		if err != nil {
+			return
+		}
+
+		losingTeam := row.Find("table.teams > tbody > tr.loser")
+		players, err = appendPlayersFromTodaysPlayedGames(players, losingTeam, db)
+		if err != nil {
+			return
+		}
+
+		players, err = parseIteratively(players)
+		if err != nil {
+			return
+		}
+
+		for _, val := range players {
+			_, err := db.UpdatePlayers(val.Games, val.Minutes, val.Points, val.Rebounds, val.Assists, val.Blocks, val.Steals, val.Turnovers, val.FGPercentage, val.FTPercentage, val.ThreeFGPercentage, val.ID)
+			if err != nil {
+				return
+			}
+		}
+	})
+
+	return nil
+}
+
+func appendPlayersFromTodaysPlayedGames(players []Player, selection *goquery.Selection, db database.Database) ([]Player, error) {
+	abbr, exists := selection.Find("td > a").First().Attr("href")
+	if exists {
+		idParts := strings.Split(abbr, "/")
+		if len(idParts) > 3 {
+			abbr = getOldTeamAbbreviation(idParts[2])
+			rows, err := db.SelectPlayerID(abbr)
+			if err != nil {
+				return nil, err
+			}
+
+			for rows.Next() {
+				var player Player
+				err := rows.Scan(&player.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				players = append(players, player)
+			}
+		}
+	}
+
+	return players, nil
 }

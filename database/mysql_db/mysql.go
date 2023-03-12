@@ -34,12 +34,18 @@ func NewDB(dbname string, addr string) (*MySqlDB, error) {
 	return &MySqlDB{db: db}, nil
 }
 
-func (m *MySqlDB) InsertPlayers() {}
-func (m *MySqlDB) InsertTeams()   {}
-func (m *MySqlDB) PrepareStatementForPlayerInsert() (*sql.Stmt, error) {
-	return m.db.Prepare("INSERT INTO players(playerid, name, college, teamabbr, height, weight, age, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, turnoverspergame, fgpercentage, ftpercentage, threeptpercentage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+func (m *MySqlDB) InsertPlayer(playerid, name, college, teamabbr, height, weight string, age, gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, threept float64) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO players(playerid, name, college, teamabbr, height, weight, age, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, turnoverspergame, fgpercentage, ftpercentage, threeptpercentage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", playerid, name, college, teamabbr, height, weight, age, gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, threept)
 }
 
-func (m *MySqlDB) PrepareStatementForTeamInsert() (*sql.Stmt, error) {
-	return m.db.Prepare("INSERT INTO teams(teamabbr, name, logo, winlosspct, playoffs, divisiontitles, conferencetitles, championships) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+func (m *MySqlDB) InsertTeam(teamabbr, name, logo string, winlosspct float64, playoffs, divtitles, conftitles, championships int64) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO teams(teamabbr, name, logo, winlosspct, playoffs, divisiontitles, conferencetitles, championships) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", teamabbr, name, logo, winlosspct, playoffs, divtitles, conftitles, championships)
+}
+
+func (m *MySqlDB) UpdatePlayers(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, playerid string) (sql.Result, error) {
+	return m.db.Exec("UPDATE players SET gamesplayed=?, minutespergame=?, pointspergame=?, reboundspergame=?, assistspergame=?, stealspergame=?, blockspergame=?, turnoverspergame=?, fgpercentage=?, ftpercentage=?, threeptpercentage=? WHERE playerid=?", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, playerid)
+}
+
+func (m *MySqlDB) SelectPlayerID(abbr string) (*sql.Rows, error) {
+	return m.db.Query("SELECT playerid FROM players WHERE teamabbr = ?", abbr)
 }

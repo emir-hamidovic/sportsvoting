@@ -28,14 +28,8 @@ func ParseTeams(db database.Database) error {
 		return err
 	}
 
-	stmt, err := db.PrepareStatementForTeamInsert()
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
 	for _, team := range allTeams {
-		_, err = stmt.Exec(team.TeamAbbr, team.Name, team.Logo, team.WinLossPct, team.Playoffs, team.DivisionTitles, team.ConferenceTitles, team.Championships)
+		_, err = db.InsertTeam(team.TeamAbbr, team.Name, team.Logo, team.WinLossPct, team.Playoffs, team.DivisionTitles, team.ConferenceTitles, team.Championships)
 		if err != nil {
 			return err
 		}
@@ -60,9 +54,6 @@ func ParseAll() ([]Teams, error) {
 	}
 
 	teams = findBasicTeamInfo(doc, teams)
-
-	// Wait for 5 seconds before sending the next request to try avoiding the rate limit of 20req/min
-	time.Sleep(5 * time.Second)
 
 	return teams, nil
 }
