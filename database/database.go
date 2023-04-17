@@ -11,10 +11,14 @@ const (
 )
 
 type Database interface {
-	InsertPlayer(string, string, string, string, string, string, int64, int64, float64, float64, float64, float64, float64, float64, float64, float64, float64, float64) (sql.Result, error)
-	InsertTeam(string, string, string, float64, int64, int64, int64, int64) (sql.Result, error)
-	UpdatePlayers(int64, float64, float64, float64, float64, float64, float64, float64, float64, float64, float64, string) (sql.Result, error)
-	SelectPlayerID(string) (*sql.Rows, error)
+	InsertPlayer(playerid, name, college, teamabbr, height, weight string, age int64) (sql.Result, error)
+	UpdatePlayerAge(playerid string, age int64) (sql.Result, error)
+	InsertTeam(teamabbr, name, logo string, winlosspct float64, playoffs, divtitles, conftitles, championships int64) (sql.Result, error)
+	UpdateStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error)
+	InsertStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error)
+	UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error)
+	SelectPlayer(playerid string) *sql.Row
+	SelectTeamByAbbrevation(teamabbr string) *sql.Row
 }
 
 type Config struct {

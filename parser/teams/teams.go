@@ -2,8 +2,10 @@ package teams
 
 import (
 	"fmt"
+	"log"
 	"scraper/database"
 	"scraper/parser"
+	"scraper/parser/players"
 	"strconv"
 	"strings"
 	"time"
@@ -22,21 +24,84 @@ type Teams struct {
 	Championships    int64
 }
 
-func ParseTeams(db database.Database) error {
+func ParseTeams(db database.Database) ([]players.Player, error) {
 	allTeams, err := ParseAll()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	var players []players.Player
+	var logo string
 	for _, team := range allTeams {
+		players, logo, err = GetTeamRosterAndLogo(team.TeamAbbr, players)
+		if err != nil {
+			return nil, err
+		}
+
+		team.Logo = logo
+		fmt.Println(team)
 		_, err = db.InsertTeam(team.TeamAbbr, team.Name, team.Logo, team.WinLossPct, team.Playoffs, team.DivisionTitles, team.ConferenceTitles, team.Championships)
 		if err != nil {
-			return err
+			log.Println(err)
 		}
+
+		time.Sleep(4 * time.Second)
 	}
 
 	fmt.Println("Teams added to database.")
-	return nil
+	return players, nil
+}
+
+func GetTeamRosterAndLogo(teamAbbr string, players []players.Player) ([]players.Player, string, error) {
+	url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s/2023.html", teamAbbr)
+	res, err := parser.SendRequest(url)
+	if err != nil {
+		return nil, "", err
+	}
+	defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return nil, "", err
+	}
+
+	players = append(players, findRosterInfo(doc, teamAbbr)...)
+	return players, getTeamLogo(doc), nil
+}
+
+func getTeamLogo(doc *goquery.Document) string {
+	logo, exists := doc.Find("img.teamlogo").Attr("src")
+	if exists {
+		return logo
+	}
+
+	return ""
+}
+
+func findRosterInfo(doc *goquery.Document, team string) []players.Player {
+	rows := doc.Find("table#roster > tbody > tr")
+	var playersList []players.Player
+	rows.Each(func(i int, row *goquery.Selection) {
+		name := row.Find("td[data-stat='player']").Text()
+		fmt.Println(name)
+		id, exists := row.Find("td[data-stat='player'] > a").Attr("href")
+		if exists {
+			idParts := strings.Split(id, "/")
+			if len(idParts) > 3 {
+				id = strings.TrimSuffix(idParts[3], ".html")
+			}
+
+			fmt.Printf("%s: %s\n", id, name)
+
+			college := row.Find("td[data-stat='college']").Last().Text()
+			height := row.Find("td[data-stat='height']").Text()
+			weight := row.Find("td[data-stat='weight']").Text()
+
+			playersList = append(playersList, players.Player{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team})
+		}
+	})
+
+	return playersList
 }
 
 func ParseAll() ([]Teams, error) {
@@ -53,9 +118,7 @@ func ParseAll() ([]Teams, error) {
 		return nil, err
 	}
 
-	teams = findBasicTeamInfo(doc, teams)
-
-	return teams, nil
+	return findBasicTeamInfo(doc, teams), nil
 }
 
 func findBasicTeamInfo(doc *goquery.Document, teams []Teams) []Teams {
@@ -64,10 +127,10 @@ func findBasicTeamInfo(doc *goquery.Document, teams []Teams) []Teams {
 		name := row.Find("th[data-stat='franch_name']").Text()
 		abbr, exists := row.Find("th[data-stat='franch_name'] > a").Attr("href")
 		if exists {
-			// Extract team ID from URL
 			idParts := strings.Split(abbr, "/")
 			if len(idParts) > 2 {
 				abbr = strings.TrimSuffix(idParts[2], ".html")
+				abbr = getCorrectTeamAbbrevation(abbr)
 			}
 
 			winlosspct, _ := strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='win_loss_pct']").Text()), 64)
@@ -75,33 +138,23 @@ func findBasicTeamInfo(doc *goquery.Document, teams []Teams) []Teams {
 			divtitles, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_division_champion']").Text()), 10, 64)
 			conftitles, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_conference_champion']").Text()), 10, 64)
 			championships, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_league_champion']").Text()), 10, 64)
-			logo, err := getLogoForTeam(abbr)
-			if err != nil {
-				return
-			}
 
-			teams = append(teams, Teams{Name: name, TeamAbbr: abbr, WinLossPct: winlosspct * 100, Playoffs: playoffs, DivisionTitles: divtitles, ConferenceTitles: conftitles, Championships: championships, Logo: logo})
-			time.Sleep(4 * time.Second)
+			teams = append(teams, Teams{Name: name, TeamAbbr: abbr, WinLossPct: winlosspct * 100, Playoffs: playoffs, DivisionTitles: divtitles, ConferenceTitles: conftitles, Championships: championships})
 		}
 	})
 
 	return teams
 }
 
-func getLogoForTeam(abbr string) (string, error) {
-	url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s", abbr)
-	res, err := parser.SendRequest(url)
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		return "", err
+func getCorrectTeamAbbrevation(name string) string {
+	switch name {
+	case "NOH":
+		return "NOP"
+	case "CHA":
+		return "CHO"
+	case "NJN":
+		return "BRK"
 	}
 
-	logo, _ := doc.Find("img.teamlogo").Attr("src")
-
-	return logo, nil
+	return name
 }

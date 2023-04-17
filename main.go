@@ -2,28 +2,48 @@ package main
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log"
+	"net/http"
 	"scraper/database"
 	"scraper/parser/players"
 	"scraper/parser/teams"
-	"sync"
 	"time"
 )
 
-func Parse(db database.Database, parse string) error {
-	if parse == "teams" {
-		return teams.ParseTeams(db)
-	} else if parse == "players" {
-		return players.ParsePlayers(db)
+func InsertTeamAndPlayerInfo(db database.Database) error {
+	playerList, err := teams.ParseTeams(db)
+	if err != nil {
+		return err
 	}
 
-	return errors.New("incorrect type")
+	fmt.Println("Inserting players")
+	err = players.InsertPlayers(db, playerList)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdatePlayerStats(db database.Database) error {
+	fmt.Println("Parsing players from current season")
+	playerList, err := players.ParsePlayersCurrentSeason()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Updating players")
+	err = players.UpdatePlayers(db, playerList)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func RunUpdate(db database.Database, ctx context.Context, errCh chan<- error) {
 	ticker := time.NewTicker(24 * time.Hour)
-	var err error
 	for {
 		select {
 		case <-ctx.Done():
@@ -31,7 +51,7 @@ func RunUpdate(db database.Database, ctx context.Context, errCh chan<- error) {
 		case <-ticker.C:
 			now := time.Now().UTC()
 			if now.Hour() == 8 && now.Minute() == 0 {
-				err = players.ParseBoxScores(db)
+				err := UpdatePlayerStats(db)
 				if err != nil {
 					errCh <- err
 					return
@@ -41,45 +61,48 @@ func RunUpdate(db database.Database, ctx context.Context, errCh chan<- error) {
 	}
 }
 
+func MVPAward(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Simple Server")
+}
+
+func DPOYAward(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Simple Server")
+}
+
+func MIPAward(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Simple Server")
+}
+
+func COYAward(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Simple Server")
+}
+
+func ROYAward(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Simple Server")
+}
+
+func SixManAward(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Simple Server")
+}
+
 func main() {
 	db, err := database.NewDB(database.Config{DbType: "mysql", DbName: "nba", Addr: "localhost:3306"})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = players.ParseBoxScores(db)
+	err = InsertTeamAndPlayerInfo(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = UpdatePlayerStats(db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-
-	// Use sync.Once to execute a function only once.
-	var once sync.Once
-
 	errChan := make(chan error, 1)
-
-	go func(ctx context.Context, errCh chan<- error) {
-		once.Do(func() {
-			err = Parse(db, "teams")
-			if err != nil {
-				return
-			}
-
-			err = Parse(db, "players")
-			if err != nil {
-				return
-			}
-		})
-
-		select {
-		case <-ctx.Done():
-			return // if the context is cancelled, return without sending the error
-		case errCh <- err:
-			return
-		}
-	}(ctx, errChan)
-
 	go RunUpdate(db, ctx, errChan)
 
 	go func(errCh <-chan error) {
@@ -92,6 +115,13 @@ func main() {
 	}(errChan)
 
 	<-ctx.Done()
-	// Close the error channel.
 	close(errChan)
 }
+
+// Create HTTP handlers for each separate award available: lets start with regular awards like MVP, MIP, DPOY (need to get advanced stats as well),
+// COY, 6MOY etc.
+
+// Try to figure out a less complicated model if possible, to avoid the concurrency - if concurrency is needed though, look for design patterns on this
+
+// What if a player is added, we are doing an update, never an insert after the first insert
+// what if he wasnt in that initial sync, trades, free agent signing etc.
