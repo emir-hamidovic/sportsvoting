@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,46 +8,37 @@ import (
 	"scraper/parser/players"
 	"scraper/parser/stats"
 	"scraper/parser/teams"
-	"time"
 )
 
-func InsertTeamAndPlayerInfo(db database.Database) error {
+func InsertTeamAndPlayerInfo(db database.Database) (map[string]players.Player, error) {
+	fmt.Println("Parsing teams")
 	playerList, err := teams.ParseTeams(db)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("Inserting players")
 	err = players.InsertPlayers(db, playerList)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return playerList, err
 }
 
-func UpdatePlayerStats(db database.Database) error {
-	fmt.Println("Parsing players from current season")
-	playerList, err := players.ParsePlayersCurrentSeason()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Updating players")
-	stat, err := players.UpdatePlayers(db, playerList)
-	if err != nil {
-		return err
-	}
-
+func UpdatePlayerStats(db database.Database, rosters map[string]players.Player) error {
 	fmt.Println("Updating stats")
-	err = stats.UpdateStats(db, stat)
-	if err != nil {
-		return err
+	for _, player := range rosters {
+		err := stats.UpdateStats(db, player.Stats)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
+/*
 func RunUpdate(db database.Database, ctx context.Context, errCh chan<- error) {
 	ticker := time.NewTicker(24 * time.Hour)
 	for {
@@ -66,7 +56,7 @@ func RunUpdate(db database.Database, ctx context.Context, errCh chan<- error) {
 			}
 		}
 	}
-}
+}*/
 
 func MVPAward(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Simple Server")
@@ -98,31 +88,31 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = InsertTeamAndPlayerInfo(db)
+	rosters, err := InsertTeamAndPlayerInfo(db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = UpdatePlayerStats(db)
+	err = UpdatePlayerStats(db, rosters)
 	if err != nil {
 		log.Fatal(err)
 	}
+	/*
+		ctx, cancel := context.WithCancel(context.Background())
+		errChan := make(chan error, 1)
+		go RunUpdate(db, ctx, errChan)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	errChan := make(chan error, 1)
-	go RunUpdate(db, ctx, errChan)
-
-	go func(errCh <-chan error) {
-		for err := range errCh {
-			if err != nil {
-				log.Println(err)
-				cancel() // cancel the context if an error is received
+		go func(errCh <-chan error) {
+			for err := range errCh {
+				if err != nil {
+					log.Println(err)
+					cancel() // cancel the context if an error is received
+				}
 			}
-		}
-	}(errChan)
+		}(errChan)
 
-	<-ctx.Done()
-	close(errChan)
+		<-ctx.Done()
+		close(errChan)*/
 }
 
 // Create HTTP handlers for each separate award available: lets start with regular awards like MVP, MIP, DPOY (need to get advanced stats as well),

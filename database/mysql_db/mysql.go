@@ -46,12 +46,12 @@ func (m *MySqlDB) InsertTeam(teamabbr, name, logo string, winlosspct float64, pl
 	return m.db.Exec("INSERT INTO teams(teamabbr, name, logo, winlosspct, playoffs, divisiontitles, conferencetitles, championships) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", teamabbr, name, logo, winlosspct, playoffs, divtitles, conftitles, championships)
 }
 
-func (m *MySqlDB) UpdateStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error) {
-	return m.db.Exec("UPDATE stats SET gamesplayed=?, minutespergame=?, pointspergame=?, reboundspergame=?, assistspergame=?, stealspergame=?, blockspergame=?, turnoverspergame=?, fgpercentage=?, ftpercentage=?, threeptpercentage=?, position=? WHERE playerid=? AND season=?", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, position, playerid, season)
+func (m *MySqlDB) UpdateStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid, teamabbr string) (sql.Result, error) {
+	return m.db.Exec("UPDATE stats SET gamesplayed=?, minutespergame=?, pointspergame=?, reboundspergame=?, assistspergame=?, stealspergame=?, blockspergame=?, turnoverspergame=?, fgpercentage=?, ftpercentage=?, threeptpercentage=?, position=?, teamabbr=? WHERE playerid=? AND season=?", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, position, teamabbr, playerid, season)
 }
 
-func (m *MySqlDB) InsertStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error) {
-	return m.db.Exec("INSERT INTO stats (gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, turnoverspergame, fgpercentage, ftpercentage, threeptpercentage, season, position, playerid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, season, position, playerid)
+func (m *MySqlDB) InsertStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid, teamabbr string) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO stats (gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, turnoverspergame, fgpercentage, ftpercentage, threeptpercentage, season, position, playerid, teamabbr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, season, position, playerid, teamabbr)
 }
 
 func (m *MySqlDB) UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error) {
