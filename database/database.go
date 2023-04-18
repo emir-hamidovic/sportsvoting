@@ -16,6 +16,7 @@ type Database interface {
 	InsertTeam(teamabbr, name, logo string, winlosspct float64, playoffs, divtitles, conftitles, championships int64) (sql.Result, error)
 	UpdateStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid, teamabbr string) (sql.Result, error)
 	InsertStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid, teamabbr string) (sql.Result, error)
+	UpdateTradedPlayerStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error)
 	UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error)
 	SelectPlayer(playerid string) *sql.Row
 	SelectTeamByAbbrevation(teamabbr string) *sql.Row

@@ -3,6 +3,7 @@ package stats
 import (
 	"fmt"
 	"scraper/database"
+	"scraper/parser"
 	"strconv"
 	"strings"
 
@@ -65,5 +66,40 @@ func UpdateStats(db database.Database, stats Stats) error {
 	}
 
 	fmt.Println("Player stats added to database.")
+	return nil
+}
+
+// Update traded player stats - go to season/2023.html and get per game stats for TOT teams only
+func UpdateTradedPlayerStats(db database.Database, season string) error {
+	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_per_game.html", season)
+	doc, err := parser.GetDocumentFromURL(url)
+	if err != nil {
+		return err
+	}
+
+	rows := doc.Find("table#per_game_stats > tbody > tr")
+	rows.Each(func(i int, row *goquery.Selection) {
+		team := row.Find("td[data-stat='team_id']").Text()
+		if team == "TOT" {
+			id, exists := row.Find("td[data-stat='player'] > a").Attr("href")
+			if exists {
+				idParts := strings.Split(id, "/")
+				if len(idParts) > 3 {
+					id = strings.TrimSuffix(idParts[3], ".html")
+				}
+			}
+
+			var stats Stats
+			FillPlayerStatsForSeason(row, season, &stats)
+			position := row.Find("td[data-stat='pos']").Text()
+			res, err := db.UpdateTradedPlayerStats(stats.Games, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, position, id)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Println(res.RowsAffected())
+		}
+	})
+
 	return nil
 }

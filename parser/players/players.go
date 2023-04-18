@@ -40,7 +40,7 @@ func GetCurrentSeasonPerGameStats(doc *goquery.Document, player map[string]Playe
 		pl := getPlayerAge(row)
 		if entry, ok := player[pl.ID]; ok {
 			entry.Age = pl.Age
-			stats.FillPlayerStatsForSeason(row, getEndYearOfTheSeason(), &entry.Stats)
+			stats.FillPlayerStatsForSeason(row, GetEndYearOfTheSeason(), &entry.Stats)
 			player[pl.ID] = entry
 		}
 	})
@@ -61,7 +61,7 @@ func getPlayerAge(row *goquery.Selection) Player {
 	return player
 }
 
-func getEndYearOfTheSeason() string {
+func GetEndYearOfTheSeason() string {
 	today := time.Now()
 	year := today.Year()
 	month := int(today.Month())

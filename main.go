@@ -35,6 +35,11 @@ func UpdatePlayerStats(db database.Database, rosters map[string]players.Player) 
 		}
 	}
 
+	err := stats.UpdateTradedPlayerStats(db, players.GetEndYearOfTheSeason())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

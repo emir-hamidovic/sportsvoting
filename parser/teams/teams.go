@@ -33,7 +33,7 @@ func ParseTeams(db database.Database) (map[string]players.Player, error) {
 
 	roster := make(map[string]players.Player, 600)
 	for _, team := range allTeams {
-		url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s/2023.html", team.TeamAbbr)
+		url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s/%s.html", team.TeamAbbr, players.GetEndYearOfTheSeason())
 		doc, err := parser.GetDocumentFromURL(url)
 		if err != nil {
 			return nil, err
