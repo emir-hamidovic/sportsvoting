@@ -47,11 +47,11 @@ func (m *MySqlDB) InsertTeam(teamabbr, name, logo string, winlosspct float64, pl
 }
 
 func (m *MySqlDB) UpdateStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error) {
-	return m.db.Exec("UPDATE stats SET gamesplayed=?, minutespergame=?, pointspergame=?, reboundspergame=?, assistspergame=?, stealspergame=?, blockspergame=?, turnoverspergame=?, fgpercentage=?, ftpercentage=?, threeptpercentage=? WHERE playerid=?", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, playerid)
+	return m.db.Exec("UPDATE stats SET gamesplayed=?, minutespergame=?, pointspergame=?, reboundspergame=?, assistspergame=?, stealspergame=?, blockspergame=?, turnoverspergame=?, fgpercentage=?, ftpercentage=?, threeptpercentage=?, position=? WHERE playerid=? AND season=?", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, position, playerid, season)
 }
 
 func (m *MySqlDB) InsertStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error) {
-	return m.db.Exec("INSERT INTO stats (gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, turnoverspergame, fgpercentage, ftpercentage, threeptpercentage, playerid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, playerid)
+	return m.db.Exec("INSERT INTO stats (gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, turnoverspergame, fgpercentage, ftpercentage, threeptpercentage, season, position, playerid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, season, position, playerid)
 }
 
 func (m *MySqlDB) UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error) {

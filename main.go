@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"scraper/database"
 	"scraper/parser/players"
+	"scraper/parser/stats"
 	"scraper/parser/teams"
 	"time"
 )
@@ -34,7 +35,13 @@ func UpdatePlayerStats(db database.Database) error {
 	}
 
 	fmt.Println("Updating players")
-	err = players.UpdatePlayers(db, playerList)
+	stat, err := players.UpdatePlayers(db, playerList)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Updating stats")
+	err = stats.UpdateStats(db, stat)
 	if err != nil {
 		return err
 	}
@@ -121,7 +128,7 @@ func main() {
 // Create HTTP handlers for each separate award available: lets start with regular awards like MVP, MIP, DPOY (need to get advanced stats as well),
 // COY, 6MOY etc.
 
-// Try to figure out a less complicated model if possible, to avoid the concurrency - if concurrency is needed though, look for design patterns on this
-
 // What if a player is added, we are doing an update, never an insert after the first insert
 // what if he wasnt in that initial sync, trades, free agent signing etc.
+
+// need to insert stats

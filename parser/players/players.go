@@ -35,15 +35,17 @@ func InsertPlayers(db database.Database, players []Player) error {
 	return nil
 }
 
-func UpdatePlayers(db database.Database, players []Player) error {
+func UpdatePlayers(db database.Database, players []Player) ([]stats.Stats, error) {
 	playerTraded := ""
+	var stats []stats.Stats
 	for _, player := range players {
 		if player.TeamAbbr == "TOT" {
 			playerTraded = player.ID
 			_, err := db.UpdatePlayerAge(player.ID, player.Age)
 			if err != nil {
-				return err
+				return nil, err
 			}
+			stats = append(stats, player.Stats)
 			continue
 		}
 
@@ -58,12 +60,13 @@ func UpdatePlayers(db database.Database, players []Player) error {
 			if err != nil {
 				fmt.Println(err)
 			}
+			stats = append(stats, player.Stats)
 		}
 		fmt.Println(player)
 	}
 
 	fmt.Println("Players updated in database.")
-	return nil
+	return stats, nil
 }
 
 func ParsePlayersCurrentSeason() ([]Player, error) {
