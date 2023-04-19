@@ -69,7 +69,6 @@ func UpdateStats(db database.Database, stats Stats) error {
 	return nil
 }
 
-// Update traded player stats - go to season/2023.html and get per game stats for TOT teams only
 func UpdateTradedPlayerStats(db database.Database, season string) error {
 	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_per_game.html", season)
 	doc, err := parser.GetDocumentFromURL(url)

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"scraper/database"
+	"scraper/parser/advancedstats"
 	"scraper/parser/players"
 	"scraper/parser/stats"
 	"scraper/parser/teams"
@@ -33,9 +34,19 @@ func UpdatePlayerStats(db database.Database, rosters map[string]players.Player) 
 		if err != nil {
 			return err
 		}
+
+		err = advancedstats.UpdateStats(db, player.AdvancedStats)
+		if err != nil {
+			return err
+		}
 	}
 
 	err := stats.UpdateTradedPlayerStats(db, players.GetEndYearOfTheSeason())
+	if err != nil {
+		return err
+	}
+
+	err = advancedstats.UpdateTradedPlayerStats(db, players.GetEndYearOfTheSeason())
 	if err != nil {
 		return err
 	}
@@ -125,5 +136,3 @@ func main() {
 
 // What if a player is added, we are doing an update, never an insert after the first insert
 // what if he wasnt in that initial sync, trades, free agent signing etc.
-
-// need to insert stats

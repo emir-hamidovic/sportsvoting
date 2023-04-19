@@ -3,6 +3,7 @@ package players
 import (
 	"fmt"
 	"scraper/database"
+	"scraper/parser/advancedstats"
 	"scraper/parser/stats"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ type Player struct {
 	Weight   string
 	Age      int64
 	stats.Stats
+	advancedstats.AdvancedStats
 }
 
 func InsertPlayers(db database.Database, players map[string]Player) error {
@@ -45,6 +47,21 @@ func GetCurrentSeasonPerGameStats(doc *goquery.Document, player map[string]Playe
 		}
 	})
 
+	rows = doc.Find("table#advanced > tbody > tr")
+	rows.Each(func(i int, row *goquery.Selection) {
+		var pl Player
+		id, exists := row.Find("td[data-stat='player'] > a").Attr("href")
+		if exists {
+			idParts := strings.Split(id, "/")
+			if len(idParts) > 3 {
+				pl.ID = strings.TrimSuffix(idParts[3], ".html")
+			}
+		}
+		if entry, ok := player[pl.ID]; ok {
+			advancedstats.FillPlayerStatsForSeason(row, GetEndYearOfTheSeason(), &entry.AdvancedStats)
+			player[pl.ID] = entry
+		}
+	})
 	return player, nil
 }
 

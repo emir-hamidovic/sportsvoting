@@ -58,6 +58,18 @@ func (m *MySqlDB) InsertStats(gp int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, f
 	return m.db.Exec("INSERT INTO stats (gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, turnoverspergame, fgpercentage, ftpercentage, threeptpercentage, season, position, playerid, teamabbr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", gp, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three, season, position, playerid, teamabbr)
 }
 
+func (m *MySqlDB) UpdateAdvancedStats(per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp float64, teamabbr, playerid, season string) (sql.Result, error) {
+	return m.db.Exec("UPDATE advancedstats SET per=?, tspct=?, usgpct=?, ows=?, dws=?, ws=?, obpm=?, dbpm=?, bpm=?, vorp=?, teamabbr=? WHERE playerid=? AND season=?", per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp, teamabbr, playerid, season)
+}
+
+func (m *MySqlDB) UpdateTradedPlayerAdvancedStats(per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp float64, playerid, season string) (sql.Result, error) {
+	return m.db.Exec("UPDATE advancedstats SET per=?, tspct=?, usgpct=?, ows=?, dws=?, ws=?, obpm=?, dbpm=?, bpm=?, vorp=? WHERE playerid=? AND season=?", per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp, playerid, season)
+}
+
+func (m *MySqlDB) InsertAdvancedStats(per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp float64, teamabbr, playerid, season string) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO advancedstats (per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp, teamabbr, playerid, season) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp, teamabbr, playerid, season)
+}
+
 func (m *MySqlDB) UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error) {
 	return m.db.Exec("UPDATE players set teamabbr=? WHERE playerid=?", teamabbr, playerid)
 }

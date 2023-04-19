@@ -5,6 +5,7 @@ import (
 	"log"
 	"scraper/database"
 	"scraper/parser"
+	"scraper/parser/advancedstats"
 	"scraper/parser/players"
 	"scraper/parser/stats"
 	"strconv"
@@ -87,7 +88,7 @@ func findRosterInfo(doc *goquery.Document, team string, playersList map[string]p
 			weight := row.Find("td[data-stat='weight']").Text()
 			position := row.Find("td[data-stat='pos']").Text()
 
-			playersList[id] = players.Player{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team, Stats: stats.Stats{Position: position, PlayerID: id, TeamAbbr: team}}
+			playersList[id] = players.Player{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team, Stats: stats.Stats{Position: position, PlayerID: id, TeamAbbr: team}, AdvancedStats: advancedstats.AdvancedStats{PlayerID: id, TeamAbbr: team}}
 		}
 	})
 
