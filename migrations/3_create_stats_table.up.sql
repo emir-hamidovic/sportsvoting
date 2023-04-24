@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS `stats` (
     id                INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
     playerid          VARCHAR(128) NOT NULL,
     gamesplayed       INT,
+    gamesstarted       INT,
     minutespergame    FLOAT,
     pointspergame     FLOAT,
     reboundspergame   FLOAT,
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS `stats` (
     season VARCHAR(5), /* year of the season */
     position  VARCHAR(5),
     teamabbr VARCHAR(5),
+    rookieseason BOOLEAN DEFAULT false,
     FOREIGN KEY(playerid) REFERENCES `players`(playerid),
     FOREIGN KEY(teamabbr) REFERENCES `teams`(teamabbr)
 );

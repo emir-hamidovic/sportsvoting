@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/go-sql-driver/mysql v1.7.0
+	github.com/gorilla/mux v1.8.0
 )
 
 require (

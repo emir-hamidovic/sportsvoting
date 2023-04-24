@@ -11,25 +11,28 @@ import (
 )
 
 type Stats struct {
-	PlayerID          string
-	Games             int64
-	Minutes           float64
-	Points            float64
-	Rebounds          float64
-	Assists           float64
-	Steals            float64
-	Blocks            float64
-	Turnovers         float64
-	FGPercentage      float64
-	ThreeFGPercentage float64
-	FTPercentage      float64
-	Season            string
-	Position          string
-	TeamAbbr          string
+	PlayerID          string  `json:"playerid,omitempty"`
+	Games             int64   `json:"g,omitempty"`
+	GamesStarted      int64   `json:"gs,omitempty"`
+	Minutes           float64 `json:"mpg,omitempty"`
+	Points            float64 `json:"ppg,omitempty"`
+	Rebounds          float64 `json:"rpg,omitempty"`
+	Assists           float64 `json:"apg,omitempty"`
+	Steals            float64 `json:"spg,omitempty"`
+	Blocks            float64 `json:"bpg,omitempty"`
+	Turnovers         float64 `json:"topg,omitempty"`
+	FGPercentage      float64 `json:"fgpct,omitempty"`
+	ThreeFGPercentage float64 `json:"threefgpct,omitempty"`
+	FTPercentage      float64 `json:"ftpct,omitempty"`
+	Season            string  `json:"season,omitempty"`
+	Position          string  `json:"position,omitempty"`
+	TeamAbbr          string  `json:"team,omitempty"`
+	IsRookie          bool    `json:"rookie,omitempty"`
 }
 
 func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *Stats) {
 	stats.Games, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='g']").Text()), 10, 64)
+	stats.GamesStarted, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='gs']").Text()), 10, 64)
 	stats.Minutes, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='mp_per_g']").Text()), 64)
 	stats.Points, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='pts_per_g']").Text()), 64)
 	stats.Rebounds, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='trb_per_g']").Text()), 64)
@@ -48,7 +51,7 @@ func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *Stat
 
 func UpdateStats(db database.Database, stats Stats) error {
 	fmt.Println(stats)
-	res, err := db.UpdateStats(stats.Games, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, stats.Position, stats.PlayerID, stats.TeamAbbr)
+	res, err := db.UpdateStats(stats.Games, stats.GamesStarted, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, stats.Position, stats.PlayerID, stats.TeamAbbr)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -59,7 +62,7 @@ func UpdateStats(db database.Database, stats Stats) error {
 	}
 
 	if rows == 0 && stats.Season != "" {
-		_, err = db.InsertStats(stats.Games, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, stats.Position, stats.PlayerID, stats.TeamAbbr)
+		_, err = db.InsertStats(stats.Games, stats.GamesStarted, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, stats.Position, stats.PlayerID, stats.TeamAbbr)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -80,23 +83,36 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 	rows.Each(func(i int, row *goquery.Selection) {
 		team := row.Find("td[data-stat='team_id']").Text()
 		if team == "TOT" {
-			id, exists := row.Find("td[data-stat='player'] > a").Attr("href")
-			if exists {
-				idParts := strings.Split(id, "/")
-				if len(idParts) > 3 {
-					id = strings.TrimSuffix(idParts[3], ".html")
-				}
-			}
+			id := parser.GetPlayerIDFromDocument(row)
 
 			var stats Stats
 			FillPlayerStatsForSeason(row, season, &stats)
 			position := row.Find("td[data-stat='pos']").Text()
-			res, err := db.UpdateTradedPlayerStats(stats.Games, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, position, id)
+			_, err := db.UpdateTradedPlayerStats(stats.Games, stats.GamesStarted, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, position, id)
 			if err != nil {
 				fmt.Println(err)
 			}
+		}
+	})
 
-			fmt.Println(res.RowsAffected())
+	return nil
+}
+
+func SetRookies(db database.Database, season string) error {
+	fmt.Println("Setting rookies")
+	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_rookies.html", season)
+	doc, err := parser.GetDocumentFromURL(url)
+	if err != nil {
+		return err
+	}
+
+	rows := doc.Find("table#rookies > tbody > tr")
+	rows.Each(func(i int, row *goquery.Selection) {
+		id := parser.GetPlayerIDFromDocument(row)
+		fmt.Println(id)
+		_, err := db.SetRookieStatus(id)
+		if err != nil {
+			fmt.Println(err)
 		}
 	})
 

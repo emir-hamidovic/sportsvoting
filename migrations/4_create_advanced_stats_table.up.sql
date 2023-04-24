@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS `advancedstats` (
     dbpm  FLOAT,
     bpm  FLOAT,
     vorp  FLOAT,
+    offrtg FLOAT,
+    defrtg FLOAT,
     season VARCHAR(5), /* year of the season */
     teamabbr VARCHAR(5),
     FOREIGN KEY(playerid) REFERENCES `players`(playerid),

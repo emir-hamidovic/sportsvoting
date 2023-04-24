@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -55,4 +56,16 @@ func GetDocumentFromURL(url string) (*goquery.Document, error) {
 	}
 
 	return doc, nil
+}
+
+func GetPlayerIDFromDocument(row *goquery.Selection) string {
+	id, exists := row.Find("td[data-stat='player'] > a").Attr("href")
+	if exists {
+		idParts := strings.Split(id, "/")
+		if len(idParts) > 3 {
+			return strings.TrimSuffix(idParts[3], ".html")
+		}
+	}
+
+	return ""
 }

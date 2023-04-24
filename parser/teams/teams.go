@@ -5,9 +5,7 @@ import (
 	"log"
 	"scraper/database"
 	"scraper/parser"
-	"scraper/parser/advancedstats"
 	"scraper/parser/players"
-	"scraper/parser/stats"
 	"strconv"
 	"strings"
 	"time"
@@ -40,8 +38,7 @@ func ParseTeams(db database.Database) (map[string]players.Player, error) {
 			return nil, err
 		}
 
-		roster = findRosterInfo(doc, team.TeamAbbr, roster)
-		roster, err = players.GetCurrentSeasonPerGameStats(doc, roster)
+		roster, err = players.GetPlayerInfo(doc, team.TeamAbbr, roster)
 		if err != nil {
 			return nil, err
 		}
@@ -68,31 +65,6 @@ func getTeamLogo(doc *goquery.Document) string {
 	}
 
 	return ""
-}
-
-func findRosterInfo(doc *goquery.Document, team string, playersList map[string]players.Player) map[string]players.Player {
-	rows := doc.Find("table#roster > tbody > tr")
-	rows.Each(func(i int, row *goquery.Selection) {
-		name := row.Find("td[data-stat='player']").Text()
-		id, exists := row.Find("td[data-stat='player'] > a").Attr("href")
-		if exists {
-			idParts := strings.Split(id, "/")
-			if len(idParts) > 3 {
-				id = strings.TrimSuffix(idParts[3], ".html")
-			}
-
-			fmt.Printf("%s: %s\n", id, name)
-
-			college := row.Find("td[data-stat='college']").Last().Text()
-			height := row.Find("td[data-stat='height']").Text()
-			weight := row.Find("td[data-stat='weight']").Text()
-			position := row.Find("td[data-stat='pos']").Text()
-
-			playersList[id] = players.Player{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team, Stats: stats.Stats{Position: position, PlayerID: id, TeamAbbr: team}, AdvancedStats: advancedstats.AdvancedStats{PlayerID: id, TeamAbbr: team}}
-		}
-	})
-
-	return playersList
 }
 
 func ParseBasicInfoForEveryTeam() ([]Teams, error) {
