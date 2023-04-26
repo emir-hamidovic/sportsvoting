@@ -7,9 +7,7 @@ import (
 	"log"
 	"net/http"
 	"scraper/database"
-	"scraper/parser/advancedstats"
 	"scraper/parser/players"
-	"scraper/parser/stats"
 	"scraper/parser/teams"
 	"time"
 
@@ -30,38 +28,6 @@ func InsertTeamAndPlayerInfo(db database.Database) (map[string]players.Player, e
 	}
 
 	return playerList, err
-}
-
-func UpdatePlayerStats(db database.Database, rosters map[string]players.Player) error {
-	fmt.Println("Updating stats")
-	for _, player := range rosters {
-		err := stats.UpdateStats(db, player.Stats)
-		if err != nil {
-			return err
-		}
-
-		err = advancedstats.UpdateStats(db, player.AdvancedStats)
-		if err != nil {
-			return err
-		}
-	}
-
-	err := stats.UpdateTradedPlayerStats(db, players.GetEndYearOfTheSeason())
-	if err != nil {
-		return err
-	}
-
-	err = advancedstats.UpdateTradedPlayerStats(db, players.GetEndYearOfTheSeason())
-	if err != nil {
-		return err
-	}
-
-	err = stats.SetRookies(db, players.GetEndYearOfTheSeason())
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 /*
@@ -119,11 +85,7 @@ func DPOYAward(w http.ResponseWriter, r *http.Request) {
 }
 
 func MIPAward(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Simple Server")
-}
-
-func COYAward(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Simple Server")
+	MVPAward(w, r)
 }
 
 func ROYAward(w http.ResponseWriter, r *http.Request) {
@@ -242,15 +204,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = UpdatePlayerStats(db, rosters)
+	err = players.UpdatePlayerStats(db, rosters)
 	if err != nil {
 		log.Fatal(err)
 	}
 	*/
+
+	err = players.UpdatePlayersWhoPlayedAGame(db)
+	if err != nil {
+		log.Fatal(err)
+	}
 	r := mux.NewRouter()
 
 	r.HandleFunc("/sixthman", SixManAward)
-	r.HandleFunc("/coy", COYAward)
 	r.HandleFunc("/dpoy", DPOYAward)
 	r.HandleFunc("/mvp", MVPAward)
 	r.HandleFunc("/mip", MIPAward)

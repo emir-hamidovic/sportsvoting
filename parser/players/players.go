@@ -1,11 +1,12 @@
 package players
 
 import (
+	"database/sql"
 	"fmt"
 	"scraper/database"
-	"scraper/parser"
 	"scraper/parser/advancedstats"
 	"scraper/parser/stats"
+	"scraper/request"
 	"strconv"
 	"strings"
 	"time"
@@ -36,7 +37,8 @@ func GetPlayerInfo(doc *goquery.Document, team string, playersList map[string]Pl
 		return nil, err
 	}
 
-	playersList, err = getCurrentSeasonAdvancedStats(doc, playersList)
+	rows := doc.Find("table#advanced > tbody > tr")
+	playersList, err = getCurrentSeasonAdvancedStats(rows, playersList)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +66,7 @@ func getRosterInfo(doc *goquery.Document, team string, player map[string]Player)
 	rows := doc.Find("table#roster > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
 		name := row.Find("td[data-stat='player']").Text()
-		id := parser.GetPlayerIDFromDocument(row)
+		id := request.GetPlayerIDFromDocument(row)
 		if id != "" {
 			fmt.Printf("%s: %s\n", id, name)
 
@@ -93,11 +95,10 @@ func getCurrentSeasonPerGameStats(doc *goquery.Document, player map[string]Playe
 
 	return player, nil
 }
-func getCurrentSeasonAdvancedStats(doc *goquery.Document, player map[string]Player) (map[string]Player, error) {
-	rows := doc.Find("table#advanced > tbody > tr")
+func getCurrentSeasonAdvancedStats(rows *goquery.Selection, player map[string]Player) (map[string]Player, error) {
 	rows.Each(func(i int, row *goquery.Selection) {
 		var pl Player
-		pl.ID = parser.GetPlayerIDFromDocument(row)
+		pl.ID = request.GetPlayerIDFromDocument(row)
 		if entry, ok := player[pl.ID]; ok {
 			advancedstats.FillPlayerStatsForSeason(row, GetEndYearOfTheSeason(), &entry.AdvancedStats)
 			player[pl.ID] = entry
@@ -109,14 +110,14 @@ func getCurrentSeasonAdvancedStats(doc *goquery.Document, player map[string]Play
 
 func getCurrentSeasonOffAndDefRtg(player map[string]Player) (map[string]Player, error) {
 	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_per_poss.html", GetEndYearOfTheSeason())
-	doc, err := parser.GetDocumentFromURL(url)
+	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
 		return nil, err
 	}
 
 	rows := doc.Find("table#per_poss_stats > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
-		id := parser.GetPlayerIDFromDocument(row)
+		id := request.GetPlayerIDFromDocument(row)
 
 		if entry, ok := player[id]; ok {
 			entry.AdvancedStats.DefRtg, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='def_rtg']").Text()), 64)
@@ -130,9 +131,120 @@ func getCurrentSeasonOffAndDefRtg(player map[string]Player) (map[string]Player, 
 
 func getPlayerAge(row *goquery.Selection) Player {
 	var player Player
-	player.ID = parser.GetPlayerIDFromDocument(row)
+	player.ID = request.GetPlayerIDFromDocument(row)
 	player.Age, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='age']").Text()), 10, 64)
 	return player
+}
+
+func UpdatePlayersWhoPlayedAGame(db database.Database) error {
+	fmt.Println("Updating players who played")
+	season := GetEndYearOfTheSeason()
+
+	rows, err := db.SelectPlayerGamesPlayed(season)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	players := make(map[string]int64, 600)
+	for rows.Next() {
+		var id string
+		var gamesplayed int64
+		err := rows.Scan(&id, &gamesplayed)
+		if err != nil {
+			fmt.Println(err)
+		}
+		players[id] = gamesplayed
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Println(err)
+	}
+
+	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_per_game.html", season)
+	doc, err := request.GetDocumentFromURL(url)
+	if err != nil {
+		return err
+	}
+
+	newplayers := make(map[string]Player, 500)
+	updateplayers := make(map[string]Player, 500)
+	table := doc.Find("table#per_game_stats > tbody > tr")
+	table.Each(func(i int, row *goquery.Selection) {
+		id := request.GetPlayerIDFromDocument(row)
+		player := getPlayerAge(row)
+		player.Stats.PlayerID = id
+		player.AdvancedStats.PlayerID = id
+		player.Name = row.Find("td[data-stat='player']").Text()
+		player.Stats.Position = row.Find("td[data-stat='pos']").Text()
+		player.TeamAbbr = row.Find("td[data-stat='team_id']").Text()
+		player.Stats.TeamAbbr = player.TeamAbbr
+		player.AdvancedStats.TeamAbbr = player.TeamAbbr
+		stats.FillPlayerStatsForSeason(row, season, &player.Stats)
+
+		entry, ok := players[id]
+		if !ok && id != "" {
+			err = db.CheckPlayerExists(id).Scan()
+			if err == sql.ErrNoRows {
+				newplayers[id] = player
+				players[id] = player.Games
+			} else {
+				err = stats.UpdateStats(db, player.Stats)
+				if err != nil {
+					fmt.Println(err)
+				}
+				updateplayers[id] = player
+			}
+		} else if player.Stats.Games > entry {
+			err = stats.UpdateStats(db, player.Stats)
+			if err != nil {
+				fmt.Println(err)
+			}
+			updateplayers[id] = player
+		}
+
+		if entry, ok := newplayers[id]; ok {
+			entry.TeamAbbr = player.TeamAbbr
+			entry.Stats.TeamAbbr = player.TeamAbbr
+			entry.AdvancedStats.TeamAbbr = player.TeamAbbr
+			newplayers[id] = entry
+		}
+	})
+
+	err = InsertPlayers(db, newplayers)
+	if err != nil {
+		return err
+	}
+
+	url = fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_advanced.html", season)
+	docAdvanced, err := request.GetDocumentFromURL(url)
+	if err != nil {
+		return err
+	}
+
+	tableAdvanced := docAdvanced.Find("table#advanced_stats > tbody > tr")
+	newplayers, err = getCurrentSeasonAdvancedStats(tableAdvanced, newplayers)
+	if err != nil {
+		fmt.Println(err)
+	}
+	updateplayers, err = getCurrentSeasonAdvancedStats(tableAdvanced, updateplayers)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	newplayers, err = getCurrentSeasonOffAndDefRtg(newplayers)
+	if err != nil {
+		fmt.Println(err)
+	}
+	updateplayers, err = getCurrentSeasonOffAndDefRtg(updateplayers)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	UpdatePlayerStats(db, newplayers)
+	UpdatePlayerStats(db, updateplayers)
+
+	return nil
 }
 
 func GetEndYearOfTheSeason() string {
@@ -147,4 +259,36 @@ func GetEndYearOfTheSeason() string {
 	}
 
 	return currentSeason
+}
+
+func UpdatePlayerStats(db database.Database, rosters map[string]Player) error {
+	fmt.Println("Updating stats")
+	for _, player := range rosters {
+		err := stats.UpdateStats(db, player.Stats)
+		if err != nil {
+			return err
+		}
+
+		err = advancedstats.UpdateStats(db, player.AdvancedStats)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := stats.UpdateTradedPlayerStats(db, GetEndYearOfTheSeason())
+	if err != nil {
+		return err
+	}
+
+	err = advancedstats.UpdateTradedPlayerStats(db, GetEndYearOfTheSeason())
+	if err != nil {
+		return err
+	}
+
+	err = stats.SetRookies(db, GetEndYearOfTheSeason())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

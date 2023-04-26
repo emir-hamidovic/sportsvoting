@@ -3,7 +3,7 @@ package advancedstats
 import (
 	"fmt"
 	"scraper/database"
-	"scraper/parser"
+	"scraper/request"
 	"strconv"
 	"strings"
 
@@ -43,6 +43,7 @@ func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *Adva
 }
 
 func UpdateStats(db database.Database, stats AdvancedStats) error {
+	// Problem with update, check this
 	fmt.Println(stats)
 	res, err := db.UpdateAdvancedStats(stats.PER, stats.TSPct, stats.USGPCt, stats.OffWS, stats.DefWS, stats.WS, stats.OffBPM, stats.DefBPM, stats.BPM, stats.VORP, stats.OffRtg, stats.DefRtg, stats.TeamAbbr, stats.PlayerID, stats.Season)
 	if err != nil {
@@ -53,8 +54,10 @@ func UpdateStats(db database.Database, stats AdvancedStats) error {
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println(rows, stats.Season)
 
 	if rows == 0 && stats.Season != "" {
+		fmt.Println("insert advanced", stats)
 		_, err = db.InsertAdvancedStats(stats.PER, stats.TSPct, stats.USGPCt, stats.OffWS, stats.DefWS, stats.WS, stats.OffBPM, stats.DefBPM, stats.BPM, stats.VORP, stats.OffRtg, stats.DefRtg, stats.TeamAbbr, stats.PlayerID, stats.Season)
 		if err != nil {
 			fmt.Println(err)
@@ -67,7 +70,7 @@ func UpdateStats(db database.Database, stats AdvancedStats) error {
 
 func UpdateTradedPlayerStats(db database.Database, season string) error {
 	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_advanced.html", season)
-	doc, err := parser.GetDocumentFromURL(url)
+	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
 		return err
 	}
@@ -76,7 +79,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 	rows.Each(func(i int, row *goquery.Selection) {
 		team := row.Find("td[data-stat='team_id']").Text()
 		if team == "TOT" {
-			id := parser.GetPlayerIDFromDocument(row)
+			id := request.GetPlayerIDFromDocument(row)
 
 			var stats AdvancedStats
 			FillPlayerStatsForSeason(row, season, &stats)
@@ -88,7 +91,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 	})
 
 	url = fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_per_poss.html", season)
-	doc, err = parser.GetDocumentFromURL(url)
+	doc, err = request.GetDocumentFromURL(url)
 	if err != nil {
 		return err
 	}
@@ -97,7 +100,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 	rows.Each(func(i int, row *goquery.Selection) {
 		team := row.Find("td[data-stat='team_id']").Text()
 		if team == "TOT" {
-			id := parser.GetPlayerIDFromDocument(row)
+			id := request.GetPlayerIDFromDocument(row)
 
 			defrtg, _ := strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='def_rtg']").Text()), 64)
 			offrtg, _ := strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='off_rtg']").Text()), 64)

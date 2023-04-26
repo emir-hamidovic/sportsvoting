@@ -23,7 +23,8 @@ type Database interface {
 	InsertAdvancedStats(per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg float64, season, playerid, teamabbr string) (sql.Result, error)
 	UpdateOffAndDefRtg(offrtg, defrtg float64, playerid, season string) (sql.Result, error)
 	UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error)
-	SelectPlayer(playerid string) *sql.Row
+	SelectPlayerGamesPlayed(season string) (*sql.Rows, error)
+	CheckPlayerExists(playerid string) *sql.Row
 	SelectTeamByAbbrevation(teamabbr string) *sql.Row
 	GetMVPStats(ctx context.Context, season string) (*sql.Rows, error)
 	GetSixManStats(ctx context.Context, season string) (*sql.Rows, error)

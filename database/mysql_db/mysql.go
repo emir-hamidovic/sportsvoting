@@ -83,8 +83,12 @@ func (m *MySqlDB) UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, er
 	return m.db.Exec("UPDATE players set teamabbr=? WHERE playerid=?", teamabbr, playerid)
 }
 
-func (m *MySqlDB) SelectPlayer(playerid string) *sql.Row {
-	return m.db.QueryRow("SELECT id, playerid, name, teamabbr, age from players where playerid=?", playerid)
+func (m *MySqlDB) SelectPlayerGamesPlayed(season string) (*sql.Rows, error) {
+	return m.db.Query("SELECT playerid, gamesplayed FROM stats WHERE season=?", season)
+}
+
+func (m *MySqlDB) CheckPlayerExists(playerid string) *sql.Row {
+	return m.db.QueryRow("SELECT 1 FROM players WHERE playerid=?", playerid)
 }
 
 func (m *MySqlDB) SelectTeamByAbbrevation(teamabbr string) *sql.Row {
@@ -104,16 +108,6 @@ func (m *MySqlDB) GetSixManStats(ctx context.Context, season string) (*sql.Rows,
 	return m.db.QueryContext(ctx, "SELECT name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND gamesplayed - gamesstarted > gamesstarted ORDER BY per DESC", season, season)
 }
 
-func (m *MySqlDB) GetCOYStats(season string) (*sql.Rows, error) {
-	// need team stats, team record etc.
-	return m.db.Query("SELECT name, gamesplayed, minutespergame, reboundspergame, stealspergame, blockspergame, position, dws, dbpm FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY dws DESC", season, season)
-}
-
 func (m *MySqlDB) GetROYStats(ctx context.Context, season string) (*sql.Rows, error) {
 	return m.db.QueryContext(ctx, "SELECT name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ws, bpm, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND rookieseason=1 AND minutespergame > 10 ORDER BY per DESC", season, season)
-}
-
-func (m *MySqlDB) GetMIPStats(season string) (*sql.Rows, error) {
-	// need to get previous year stats
-	return m.db.Query("SELECT name, gamesplayed, minutespergame, reboundspergame, stealspergame, blockspergame, position, dws, dbpm FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY dws DESC", season, season)
 }

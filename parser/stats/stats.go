@@ -3,7 +3,7 @@ package stats
 import (
 	"fmt"
 	"scraper/database"
-	"scraper/parser"
+	"scraper/request"
 	"strconv"
 	"strings"
 
@@ -74,7 +74,7 @@ func UpdateStats(db database.Database, stats Stats) error {
 
 func UpdateTradedPlayerStats(db database.Database, season string) error {
 	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_per_game.html", season)
-	doc, err := parser.GetDocumentFromURL(url)
+	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 	rows.Each(func(i int, row *goquery.Selection) {
 		team := row.Find("td[data-stat='team_id']").Text()
 		if team == "TOT" {
-			id := parser.GetPlayerIDFromDocument(row)
+			id := request.GetPlayerIDFromDocument(row)
 
 			var stats Stats
 			FillPlayerStatsForSeason(row, season, &stats)
@@ -101,14 +101,14 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 func SetRookies(db database.Database, season string) error {
 	fmt.Println("Setting rookies")
 	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_rookies.html", season)
-	doc, err := parser.GetDocumentFromURL(url)
+	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
 		return err
 	}
 
 	rows := doc.Find("table#rookies > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
-		id := parser.GetPlayerIDFromDocument(row)
+		id := request.GetPlayerIDFromDocument(row)
 		fmt.Println(id)
 		_, err := db.SetRookieStatus(id)
 		if err != nil {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"scraper/database"
-	"scraper/parser"
 	"scraper/parser/players"
+	"scraper/request"
 	"strconv"
 	"strings"
 	"time"
@@ -33,7 +33,7 @@ func ParseTeams(db database.Database) (map[string]players.Player, error) {
 	roster := make(map[string]players.Player, 600)
 	for _, team := range allTeams {
 		url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s/%s.html", team.TeamAbbr, players.GetEndYearOfTheSeason())
-		doc, err := parser.GetDocumentFromURL(url)
+		doc, err := request.GetDocumentFromURL(url)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func getTeamLogo(doc *goquery.Document) string {
 
 func ParseBasicInfoForEveryTeam() ([]Teams, error) {
 	url := "https://www.basketball-reference.com/teams"
-	doc, err := parser.GetDocumentFromURL(url)
+	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
 		return nil, err
 	}
