@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"scraper/database"
-	"scraper/parser/players"
+	"scraper/players"
 	"scraper/request"
 	"strconv"
 	"strings"

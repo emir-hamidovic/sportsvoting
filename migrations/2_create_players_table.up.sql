@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS `players` (
-  id         INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
-  playerid   VARCHAR(128) UNIQUE NOT NULL,
+  playerid   VARCHAR(128) PRIMARY KEY NOT NULL,
   name       VARCHAR(128) NOT NULL,
   teamabbr   VARCHAR(5),
   college    VARCHAR(128),

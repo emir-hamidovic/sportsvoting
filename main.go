@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 	"scraper/database"
-	"scraper/parser/players"
-	"scraper/parser/teams"
+	"scraper/players"
+	"scraper/teams"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -251,6 +251,3 @@ func main() {
 		<-ctx.Done()
 		close(errChan)*/
 }
-
-// What if a player is added, we are doing an update, never an insert after the first insert
-// what if he wasnt in that initial sync, trades, free agent signing etc.
