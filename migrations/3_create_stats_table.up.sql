@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS `stats` (
     ftpercentage      FLOAT,
     blockspergame     FLOAT,
     turnoverspergame  FLOAT,
-    season VARCHAR(5), /* year of the season */
+    season VARCHAR(4), /* year of the season */
     position  VARCHAR(5),
-    teamabbr VARCHAR(5),
+    teamabbr VARCHAR(3),
     rookieseason BOOLEAN DEFAULT false,
     FOREIGN KEY(playerid) REFERENCES `players`(playerid),
     FOREIGN KEY(teamabbr) REFERENCES `teams`(teamabbr)
