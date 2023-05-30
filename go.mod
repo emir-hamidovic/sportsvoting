@@ -1,4 +1,4 @@
-module scraper
+module sportsvoting
 
 go 1.18
 

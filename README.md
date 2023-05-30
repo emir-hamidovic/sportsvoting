@@ -23,5 +23,5 @@ After that, you can run the project with a simple
 
 ```
 go build
-./scraper
+./sportsvoting
 ```

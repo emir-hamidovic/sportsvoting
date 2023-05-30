@@ -2,10 +2,9 @@ package advancedstats
 
 import (
 	"fmt"
-	"scraper/database"
-	"scraper/request"
-	"strconv"
-	"strings"
+	"sportsvoting/database"
+	"sportsvoting/request"
+	"sportsvoting/scraper"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -29,16 +28,16 @@ type AdvancedStats struct {
 }
 
 func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *AdvancedStats) {
-	stats.PER, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='per']").Text()), 64)
-	stats.TSPct, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='ts_pct']").Text()), 64)
-	stats.USGPCt, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='usg_pct']").Text()), 64)
-	stats.OffWS, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='ows']").Text()), 64)
-	stats.DefWS, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='dws']").Text()), 64)
-	stats.WS, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='ws']").Text()), 64)
-	stats.OffBPM, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='obpm']").Text()), 64)
-	stats.DefBPM, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='dbpm']").Text()), 64)
-	stats.BPM, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='bpm']").Text()), 64)
-	stats.VORP, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='vorp']").Text()), 64)
+	stats.PER = scraper.GetTDDataStatFloat(row, "per")
+	stats.TSPct = scraper.GetTDDataStatFloat(row, "ts_pct")
+	stats.USGPCt = scraper.GetTDDataStatFloat(row, "usg_pct")
+	stats.OffWS = scraper.GetTDDataStatFloat(row, "ows")
+	stats.DefWS = scraper.GetTDDataStatFloat(row, "dws")
+	stats.WS = scraper.GetTDDataStatFloat(row, "ws")
+	stats.OffBPM = scraper.GetTDDataStatFloat(row, "obpm")
+	stats.DefBPM = scraper.GetTDDataStatFloat(row, "dbpm")
+	stats.BPM = scraper.GetTDDataStatFloat(row, "bpm")
+	stats.VORP = scraper.GetTDDataStatFloat(row, "vorp")
 	stats.Season = season
 }
 
@@ -77,7 +76,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 
 	rows := doc.Find("table#advanced_stats > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
-		team := row.Find("td[data-stat='team_id']").Text()
+		team := scraper.GetTDDataStatString(row, "team_id")
 		if team == "TOT" {
 			id := request.GetPlayerIDFromDocument(row)
 
@@ -98,12 +97,12 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 
 	rows = doc.Find("table#per_poss_stats > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
-		team := row.Find("td[data-stat='team_id']").Text()
+		team := scraper.GetTDDataStatString(row, "team_id")
 		if team == "TOT" {
 			id := request.GetPlayerIDFromDocument(row)
 
-			defrtg, _ := strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='def_rtg']").Text()), 64)
-			offrtg, _ := strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='off_rtg']").Text()), 64)
+			defrtg := scraper.GetTDDataStatFloat(row, "def_rtg")
+			offrtg := scraper.GetTDDataStatFloat(row, "off_rtg")
 			_, err := db.UpdateOffAndDefRtg(offrtg, defrtg, season, id)
 			if err != nil {
 				fmt.Println(err)

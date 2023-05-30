@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"scraper/database/mysql_db"
+	"sportsvoting/database/mysql_db"
 )
 
 const (

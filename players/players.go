@@ -3,12 +3,11 @@ package players
 import (
 	"database/sql"
 	"fmt"
-	"scraper/advancedstats"
-	"scraper/database"
-	"scraper/request"
-	"scraper/stats"
-	"strconv"
-	"strings"
+	"sportsvoting/advancedstats"
+	"sportsvoting/database"
+	"sportsvoting/request"
+	"sportsvoting/scraper"
+	"sportsvoting/stats"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -65,15 +64,13 @@ func InsertPlayers(db database.Database, players map[string]Player) error {
 func getRosterInfo(doc *goquery.Document, team string, player map[string]Player) (map[string]Player, error) {
 	rows := doc.Find("table#roster > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
-		name := row.Find("td[data-stat='player']").Text()
+		name := scraper.GetTDDataStatString(row, "player")
 		id := request.GetPlayerIDFromDocument(row)
 		if id != "" {
-			fmt.Printf("%s: %s\n", id, name)
-
 			college := row.Find("td[data-stat='college']").Last().Text()
-			height := row.Find("td[data-stat='height']").Text()
-			weight := row.Find("td[data-stat='weight']").Text()
-			position := row.Find("td[data-stat='pos']").Text()
+			height := scraper.GetTDDataStatString(row, "height")
+			weight := scraper.GetTDDataStatString(row, "height")
+			position := scraper.GetTDDataStatString(row, "height")
 
 			player[id] = Player{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team, Stats: stats.Stats{Position: position, PlayerID: id, TeamAbbr: team}, AdvancedStats: advancedstats.AdvancedStats{PlayerID: id, TeamAbbr: team}}
 		}
@@ -120,8 +117,8 @@ func getCurrentSeasonOffAndDefRtg(player map[string]Player) (map[string]Player, 
 		id := request.GetPlayerIDFromDocument(row)
 
 		if entry, ok := player[id]; ok {
-			entry.AdvancedStats.DefRtg, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='def_rtg']").Text()), 64)
-			entry.AdvancedStats.OffRtg, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='off_rtg']").Text()), 64)
+			entry.AdvancedStats.DefRtg = scraper.GetTDDataStatFloat(row, "def_rtg")
+			entry.AdvancedStats.OffRtg = scraper.GetTDDataStatFloat(row, "off_rtg")
 			player[id] = entry
 		}
 	})
@@ -132,7 +129,7 @@ func getCurrentSeasonOffAndDefRtg(player map[string]Player) (map[string]Player, 
 func getPlayerAge(row *goquery.Selection) Player {
 	var player Player
 	player.ID = request.GetPlayerIDFromDocument(row)
-	player.Age, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='age']").Text()), 10, 64)
+	player.Age = scraper.GetTDDataStatInt(row, "age")
 	return player
 }
 
@@ -175,9 +172,9 @@ func UpdatePlayersWhoPlayedAGame(db database.Database) error {
 		player := getPlayerAge(row)
 		player.Stats.PlayerID = id
 		player.AdvancedStats.PlayerID = id
-		player.Name = row.Find("td[data-stat='player']").Text()
-		player.Stats.Position = row.Find("td[data-stat='pos']").Text()
-		player.TeamAbbr = row.Find("td[data-stat='team_id']").Text()
+		player.Name = scraper.GetTDDataStatString(row, "player")
+		player.Stats.Position = scraper.GetTDDataStatString(row, "pos")
+		player.TeamAbbr = scraper.GetTDDataStatString(row, "team_id")
 		player.Stats.TeamAbbr = player.TeamAbbr
 		player.AdvancedStats.TeamAbbr = player.TeamAbbr
 		stats.FillPlayerStatsForSeason(row, season, &player.Stats)

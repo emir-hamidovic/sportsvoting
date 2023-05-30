@@ -2,10 +2,9 @@ package stats
 
 import (
 	"fmt"
-	"scraper/database"
-	"scraper/request"
-	"strconv"
-	"strings"
+	"sportsvoting/database"
+	"sportsvoting/request"
+	"sportsvoting/scraper"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -31,21 +30,18 @@ type Stats struct {
 }
 
 func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *Stats) {
-	stats.Games, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='g']").Text()), 10, 64)
-	stats.GamesStarted, _ = strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='gs']").Text()), 10, 64)
-	stats.Minutes, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='mp_per_g']").Text()), 64)
-	stats.Points, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='pts_per_g']").Text()), 64)
-	stats.Rebounds, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='trb_per_g']").Text()), 64)
-	stats.Assists, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='ast_per_g']").Text()), 64)
-	stats.Blocks, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='blk_per_g']").Text()), 64)
-	stats.Steals, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='stl_per_g']").Text()), 64)
-	stats.Turnovers, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='tov_per_g']").Text()), 64)
-	stats.FGPercentage, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='fg_pct']").Text()), 64)
-	stats.FGPercentage = stats.FGPercentage * 100
-	stats.ThreeFGPercentage, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='fg3_pct']").Text()), 64)
-	stats.ThreeFGPercentage = stats.ThreeFGPercentage * 100
-	stats.FTPercentage, _ = strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='ft_pct']").Text()), 64)
-	stats.FTPercentage = stats.FTPercentage * 100
+	stats.Games = scraper.GetTDDataStatInt(row, "g")
+	stats.GamesStarted = scraper.GetTDDataStatInt(row, "gs")
+	stats.Minutes = scraper.GetTDDataStatFloat(row, "mp_per_g")
+	stats.Points = scraper.GetTDDataStatFloat(row, "pts_per_g")
+	stats.Rebounds = scraper.GetTDDataStatFloat(row, "trb_per_g")
+	stats.Assists = scraper.GetTDDataStatFloat(row, "ast_per_g")
+	stats.Blocks = scraper.GetTDDataStatFloat(row, "blk_per_g")
+	stats.Steals = scraper.GetTDDataStatFloat(row, "stl_per_g")
+	stats.Turnovers = scraper.GetTDDataStatFloat(row, "tov_per_g")
+	stats.FGPercentage = scraper.GetTDDataStatFloat(row, "fg_pct") * 100
+	stats.ThreeFGPercentage = scraper.GetTDDataStatFloat(row, "fg3_pct") * 100
+	stats.FTPercentage = scraper.GetTDDataStatFloat(row, "ft_pct") * 100
 	stats.Season = season
 }
 
@@ -81,13 +77,13 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 
 	rows := doc.Find("table#per_game_stats > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
-		team := row.Find("td[data-stat='team_id']").Text()
+		team := scraper.GetTDDataStatString(row, "team_id")
 		if team == "TOT" {
 			id := request.GetPlayerIDFromDocument(row)
 
 			var stats Stats
 			FillPlayerStatsForSeason(row, season, &stats)
-			position := row.Find("td[data-stat='pos']").Text()
+			position := scraper.GetTDDataStatString(row, "pos")
 			_, err := db.UpdateTradedPlayerStats(stats.Games, stats.GamesStarted, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, position, id)
 			if err != nil {
 				fmt.Println(err)
@@ -109,7 +105,6 @@ func SetRookies(db database.Database, season string) error {
 	rows := doc.Find("table#rookies > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
 		id := request.GetPlayerIDFromDocument(row)
-		fmt.Println(id)
 		_, err := db.SetRookieStatus(id)
 		if err != nil {
 			fmt.Println(err)

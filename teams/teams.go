@@ -3,10 +3,10 @@ package teams
 import (
 	"fmt"
 	"log"
-	"scraper/database"
-	"scraper/players"
-	"scraper/request"
-	"strconv"
+	"sportsvoting/database"
+	"sportsvoting/players"
+	"sportsvoting/request"
+	"sportsvoting/scraper"
 	"strings"
 	"time"
 
@@ -43,7 +43,7 @@ func ParseTeams(db database.Database) (map[string]players.Player, error) {
 			return nil, err
 		}
 
-		team.Logo = getTeamLogo(doc)
+		team.Logo = scraper.GetTeamLogo(doc)
 		fmt.Println(team)
 
 		_, err = db.InsertTeam(team.TeamAbbr, team.Name, team.Logo, team.WinLossPct, team.Playoffs, team.DivisionTitles, team.ConferenceTitles, team.Championships)
@@ -56,15 +56,6 @@ func ParseTeams(db database.Database) (map[string]players.Player, error) {
 
 	fmt.Println("Teams added to database.")
 	return roster, nil
-}
-
-func getTeamLogo(doc *goquery.Document) string {
-	logo, exists := doc.Find("img.teamlogo").Attr("src")
-	if exists {
-		return logo
-	}
-
-	return ""
 }
 
 func ParseBasicInfoForEveryTeam() ([]Teams, error) {
@@ -89,11 +80,11 @@ func findBasicTeamInfo(doc *goquery.Document, teams []Teams) []Teams {
 				abbr = getCorrectTeamAbbrevation(abbr)
 			}
 
-			winlosspct, _ := strconv.ParseFloat(strings.TrimSpace(row.Find("td[data-stat='win_loss_pct']").Text()), 64)
-			playoffs, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_playoffs']").Text()), 10, 64)
-			divtitles, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_division_champion']").Text()), 10, 64)
-			conftitles, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_conference_champion']").Text()), 10, 64)
-			championships, _ := strconv.ParseInt(strings.TrimSpace(row.Find("td[data-stat='years_league_champion']").Text()), 10, 64)
+			winlosspct := scraper.GetTDDataStatFloat(row, "win_loss_pct")
+			playoffs := scraper.GetTDDataStatInt(row, "years_playoffs")
+			divtitles := scraper.GetTDDataStatInt(row, "years_division_champion")
+			conftitles := scraper.GetTDDataStatInt(row, "years_conference_champion")
+			championships := scraper.GetTDDataStatInt(row, "years_league_champion")
 
 			teams = append(teams, Teams{Name: name, TeamAbbr: abbr, WinLossPct: winlosspct * 100, Playoffs: playoffs, DivisionTitles: divtitles, ConferenceTitles: conftitles, Championships: championships})
 		}

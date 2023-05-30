@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS `teams` (
-  teamabbr          VARCHAR(2) PRIMARY KEY,
+  teamabbr          VARCHAR(3) PRIMARY KEY,
   name              VARCHAR(128) NOT NULL,
   logo              VARCHAR(256) NOT NULL,
   winlosspct        FLOAT,
