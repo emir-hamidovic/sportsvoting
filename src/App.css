@@ -1,0 +1,133 @@
+/* header styles */
+.App-header {
+    background-image: linear-gradient(to right, #50c9c3, #96deda);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    padding: 0 20px;
+    width: 100%;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+  }
+  
+  /* title styles */
+  .App-title {
+    font-weight: bold;
+  }
+  
+  /* login button styles */
+  .App-login {
+    display: flex;
+    align-items: center;
+  }
+  
+  .App-login button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+  }
+  
+  /* poll list styles */
+  .App-polls {
+    background-color: #f9f9f9;
+    padding: 20px;
+  }
+  
+  /* poll item styles */
+  .App-poll {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .App-poll:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* poll image styles */
+  .App-poll img {
+    width: 100px;
+    height: 100px;
+    margin-right: 10px;
+  }
+  
+  /* poll details styles */
+  .App-poll-details {
+    flex: 1;
+  }
+  
+  .App-poll-details h2 {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+  
+  /* poll actions styles */
+  .App-poll-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  
+  /* poll button styles */
+  .App-poll-actions button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: #50c9c3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .App-poll-actions button:hover {
+    background-color: #37b2ac;
+  }
+
+  .vote-button, .results-button {
+    font-size: 24px;
+    padding: 12px 24px;
+    border-radius: 25px;
+    border: none;
+    color: #fff;
+    background-color: #007bff;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    width: 120px;
+  }
+  
+  .vote-button:hover, .results-button:hover {
+    background-color: #0069d9;
+  }
+  
+  .vote-button:focus, .results-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+  }
+  
+  @media only screen and (max-width: 768px) {
+    .vote-button, .results-button {
+      font-size: 18px;
+      padding: 10px 20px;
+    }
+  }
+
+  
+  
+  
+  
