@@ -70,11 +70,12 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/sixthman", SixManAward)
-	r.HandleFunc("/dpoy", DPOYAward)
-	r.HandleFunc("/mvp", MVPAward)
-	r.HandleFunc("/mip", MIPAward)
-	r.HandleFunc("/roy", ROYAward)
+	r.HandleFunc("/getpolls", getPolls)
+	r.HandleFunc("/sixthman", sixManAward)
+	r.HandleFunc("/dpoy", dpoyAward)
+	r.HandleFunc("/mvp", mvpAward)
+	r.HandleFunc("/mip", mipAward)
+	r.HandleFunc("/roy", royAward)
 
 	srv := &http.Server{
 		Addr:         ":8080",

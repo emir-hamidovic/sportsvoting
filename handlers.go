@@ -8,7 +8,51 @@ import (
 	"time"
 )
 
-func DPOYAward(w http.ResponseWriter, r *http.Request) {
+type Poll struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+}
+
+func getPolls(w http.ResponseWriter, r *http.Request) {
+	var polls []Poll
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	rows, err := db.GetPolls(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Iterate over the rows and populate the polls slice
+	for rows.Next() {
+		var poll Poll
+		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		polls = append(polls, poll)
+	}
+
+	// Convert the polls slice to JSON
+	pollsJSON, err := json.Marshal(polls)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// Set the response headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Write the JSON response
+	w.Write(pollsJSON)
+}
+
+func dpoyAward(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -42,11 +86,11 @@ func DPOYAward(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(playerList)
 }
 
-func MIPAward(w http.ResponseWriter, r *http.Request) {
-	MVPAward(w, r)
+func mipAward(w http.ResponseWriter, r *http.Request) {
+	mvpAward(w, r)
 }
 
-func ROYAward(w http.ResponseWriter, r *http.Request) {
+func royAward(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -80,7 +124,7 @@ func ROYAward(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(playerList)
 }
 
-func SixManAward(w http.ResponseWriter, r *http.Request) {
+func sixManAward(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -114,7 +158,7 @@ func SixManAward(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(playerList)
 }
 
-func MVPAward(w http.ResponseWriter, r *http.Request) {
+func mvpAward(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

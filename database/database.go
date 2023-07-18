@@ -31,6 +31,7 @@ type Database interface {
 	GetDPOYStats(ctx context.Context, season string) (*sql.Rows, error)
 	GetROYStats(ctx context.Context, season string) (*sql.Rows, error)
 	SetRookieStatus(id string) (sql.Result, error)
+	GetPolls(ctx context.Context) (*sql.Rows, error)
 }
 
 type Config struct {
