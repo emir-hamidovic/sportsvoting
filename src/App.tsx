@@ -1,15 +1,19 @@
-import React from 'react';
 import './App.css';
-
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import HomePage from './components/HomePage';
+import MVPTable from './components/MVPTable';
 import Header from './components/Header';
-import PollsComponent from './components/Polls';
+import "./styles/table.css";
 
 function App() {
   return (
-    <div className="App">
+    <BrowserRouter>
       <Header />
-      <PollsComponent />
-    </div>
+      <Routes>
+        <Route path="/mvp" element={<MVPTable />} />
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

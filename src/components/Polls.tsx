@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const PollsComponent = () => {
   const [polls, setPolls] = useState([]);
@@ -30,7 +31,9 @@ const PollsComponent = () => {
               <p>{poll['description']}</p>
             </div>
             <div className="App-poll-actions">
-              <button className="vote-button">Vote</button>
+              <Link to="/mvp">
+                <button className="vote-button">Vote</button>
+              </Link>
               <button className="results-button">Check Results</button>
             </div>
           </div>
