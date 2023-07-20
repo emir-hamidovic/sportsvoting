@@ -113,5 +113,5 @@ func (m *MySqlDB) GetROYStats(ctx context.Context, season string) (*sql.Rows, er
 }
 
 func (m *MySqlDB) GetPolls(ctx context.Context) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT id, name, description, image FROM polls")
+	return m.db.QueryContext(ctx, "SELECT id, name, description, image, endpoint FROM polls")
 }

@@ -13,6 +13,7 @@ type Poll struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Image       string `json:"image"`
+	Endpoint    string `json:"endpoint"`
 }
 
 func getPolls(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,7 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 	// Iterate over the rows and populate the polls slice
 	for rows.Next() {
 		var poll Poll
-		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image)
+		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.Endpoint)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

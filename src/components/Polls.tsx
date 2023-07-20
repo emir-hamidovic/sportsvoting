@@ -31,7 +31,7 @@ const PollsComponent = () => {
               <p>{poll['description']}</p>
             </div>
             <div className="App-poll-actions">
-              <Link to="/mvp">
+              <Link to={`/${poll['endpoint']}`}>
                 <button className="vote-button">Vote</button>
               </Link>
               <button className="results-button">Check Results</button>

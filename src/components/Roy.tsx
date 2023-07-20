@@ -1,0 +1,103 @@
+import { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+import StatsTable from './StatsTable';
+
+export default function Roy () {
+  const [data, setData] = useState([]);
+
+  const columns = useMemo(
+    () => [
+      {
+        Header: "Name",
+        accessor: "name",
+      },
+      {
+        Header: "Games",
+        accessor: "stats.g",
+      },
+      {
+        Header: "Minutes",
+        accessor: "stats.mpg",
+      },
+      {
+        Header: "Points",
+        accessor: "stats.ppg",
+      },
+      {
+        Header: "Rebounds",
+        accessor: "stats.rpg",
+      },
+      {
+        Header: "Assists",
+        accessor: "stats.apg",
+      },
+      {
+        Header: "Steals",
+        accessor: "stats.spg",
+      },
+      {
+        Header: "Blocks",
+        accessor: "stats.bpg",
+      },
+      {
+        Header: "Turnovers",
+        accessor: "stats.topg",
+      },
+      {
+        Header: "FG%",
+        accessor: "stats.fgpct",
+      },
+      {
+        Header: "3FG%",
+        accessor: "stats.threefgpct",
+      },
+      {
+        Header: "FT%",
+        accessor: "stats.ftpct",
+      },
+      {
+        Header: "PER",
+        accessor: "advstats.per",
+      },
+      {
+        Header: "WS",
+        accessor: "advstats.ws",
+      },
+      {
+        Header: "BPM",
+        accessor: "advstats.bpm",
+      },
+      {
+        Header: "ORtg",
+        accessor: "advstats.offrtg",
+      },
+      {
+        Header: "DRtg",
+        accessor: "advstats.defrtg",
+      },
+    ],
+    []
+  );
+
+  useEffect(() => {
+    // Fetch data from Go server
+   const fetchData = async () => { await axios.get('http://localhost:8080/roy')
+      .then((response) => {
+        setData(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+      });
+ 
+    }
+    fetchData();
+
+}, []);
+
+  return (
+    <div>
+      <StatsTable columns={columns} data={data} />
+    </div>
+  );
+};
+
