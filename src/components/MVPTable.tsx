@@ -1,11 +1,39 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { useTable, ColumnInterface } from 'react-table';
+import { useTable, ColumnInterface, useSortBy } from 'react-table';
 
 export interface Column extends ColumnInterface {
   Header: string;
   accessor: string;
 }
+
+const emojiStyle = {
+  height: '1em', // Adjust the height to your desired size
+  width: '1em', // Adjust the width to your desired size
+  marginRight: '0.5em',
+};
+
+const UpArrowEmoji = () => (
+  <img
+    draggable="false"
+    role="img"
+    className="emoji"
+    alt="🔼"
+    src="https://s.w.org/images/core/emoji/14.0.0/svg/1f53c.svg"
+    style={emojiStyle}
+  />
+);
+
+const DownArrowEmoji = () => (
+  <img
+    draggable="false"
+    role="img"
+    className="emoji"
+    alt="🔽"
+    src="https://s.w.org/images/core/emoji/14.0.0/svg/1f53d.svg"
+    style={emojiStyle}
+  />
+);
 
 export default function MVPTable () {
   const [data, setData] = useState([]);
@@ -128,22 +156,25 @@ export default function MVPTable () {
   } = useTable({
     columns ,
     data
-  });
+  }, useSortBy);
 
 
   return (
     <div>
       <div className="table-container">
-
       <table {...getTableProps()}>
       <thead>
-      {headerGroups.map(headerGroup => (
-          <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map(column => (
-              <th {...column.getHeaderProps()}>{column.render("Header")}</th>
+      {headerGroups.map((headerGroup) => (
+                <tr {...headerGroup.getHeaderGroupProps()}>
+                    {headerGroup.headers.map((column: any) => (
+                        <th {...column.getHeaderProps(column.getSortByToggleProps())}>{column.render('Header')}
+                        <span>
+                            {column.isSorted ? (column.isSortedDesc ? <DownArrowEmoji /> : <UpArrowEmoji />) : ''}
+                        </span>
+                        </th>
+                    ))}
+                </tr>
             ))}
-          </tr>
-        ))}
       </thead>
       <tbody {...getTableBodyProps()}>
         {rows.map((row, i) => {
