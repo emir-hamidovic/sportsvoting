@@ -115,3 +115,15 @@ func (m *MySqlDB) GetROYStats(ctx context.Context, season string) (*sql.Rows, er
 func (m *MySqlDB) GetPolls(ctx context.Context) (*sql.Rows, error) {
 	return m.db.QueryContext(ctx, "SELECT id, name, description, image, endpoint FROM polls")
 }
+
+func (m *MySqlDB) InsertPolls(id int64, name, description, image, endpoint string) (sql.Result, error) {
+	return m.db.Exec("INSERT IGNORE INTO polls(id, name, description, image, endpoint) VALUES (?, ?, ?, ?, ?)", id, name, description, image, endpoint)
+}
+
+func (m *MySqlDB) GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {
+	return m.db.QueryContext(ctx, "SELECT p.name, v.votes_for FROM player_votes v INNER JOIN players p ON v.playerid=p.playerid INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? ORDER BY v.votes_for DESC", pollid)
+}
+
+func (m *MySqlDB) GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {
+	return m.db.QueryContext(ctx, "SELECT t.name, v.votes_for FROM team_votes v INNER JOIN teams t ON v.teamabbr=t.teamabbr INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? ORDER BY v.votes_for DESC", pollid)
+}

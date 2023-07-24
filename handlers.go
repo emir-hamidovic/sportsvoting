@@ -9,7 +9,7 @@ import (
 )
 
 type Poll struct {
-	ID          int    `json:"id"`
+	ID          int64  `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Image       string `json:"image"`
@@ -192,3 +192,7 @@ func mvpAward(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Security-Policy", "default-src 'self'")
 	json.NewEncoder(w).Encode(playerList)
 }
+
+func playerVotes(w http.ResponseWriter, r *http.Request) {}
+
+func teamVotes(w http.ResponseWriter, r *http.Request) {}
