@@ -19,7 +19,6 @@ const PollsComponent = () => {
   }, []);
 
   return (
-    <div>
     <div className="App-polls">
         {polls.map(poll => (
           <div key={poll['id']} className="App-poll">
@@ -38,8 +37,7 @@ const PollsComponent = () => {
             </div>
           </div>
         ))}
-      </div>
-       </div>
+    </div>
   );
 };
 

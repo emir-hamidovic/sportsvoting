@@ -4,7 +4,7 @@ import './header.css';
 function Header() {
   return (
     <header className="header">
-      <div className="logo">Sport Voting</div>
+      <h1 className="underline text-3xl">Sport Voting</h1>
       <div className="header-buttons">
         <a href="#">Login</a>
         <a href="#">Sign up</a>

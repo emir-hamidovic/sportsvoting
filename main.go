@@ -57,16 +57,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*
-		rosters, err := InsertTeamAndPlayerInfo(db)
-		if err != nil {
-			log.Fatal(err)
-		}
 
-		err = players.UpdatePlayerStats(db, rosters)
-		if err != nil {
-			log.Fatal(err)
-		}*/
+	/*rosters, err := InsertTeamAndPlayerInfo(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = players.UpdatePlayerStats(db, rosters)
+	if err != nil {
+		log.Fatal(err)
+	}*/
 
 	// Need a better solution for inserting pictures
 	polls := []Poll{

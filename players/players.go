@@ -69,8 +69,8 @@ func getRosterInfo(doc *goquery.Document, team string, player map[string]Player)
 		if id != "" {
 			college := row.Find("td[data-stat='college']").Last().Text()
 			height := scraper.GetTDDataStatString(row, "height")
-			weight := scraper.GetTDDataStatString(row, "height")
-			position := scraper.GetTDDataStatString(row, "height")
+			weight := scraper.GetTDDataStatString(row, "weight")
+			position := scraper.GetTDDataStatString(row, "pos")
 
 			player[id] = Player{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team, Stats: stats.Stats{Position: position, PlayerID: id, TeamAbbr: team}, AdvancedStats: advancedstats.AdvancedStats{PlayerID: id, TeamAbbr: team}}
 		}
