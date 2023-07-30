@@ -97,7 +97,7 @@ func (m *MySqlDB) SelectTeamByAbbrevation(teamabbr string) *sql.Row {
 
 func (m *MySqlDB) GetMVPStats(ctx context.Context, season string) (*sql.Rows, error) {
 	// need pictures for each player
-	return m.db.QueryContext(ctx, "SELECT name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY per DESC", season, season)
+	return m.db.QueryContext(ctx, "SELECT players.playerid, name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY per DESC", season, season)
 }
 
 func (m *MySqlDB) GetDPOYStats(ctx context.Context, season string) (*sql.Rows, error) {

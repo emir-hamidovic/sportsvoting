@@ -6,8 +6,8 @@ export interface Column extends ColumnInterface {
 }
 
 const emojiStyle = {
-    height: '1em', // Adjust the height to your desired size
-    width: '1em', // Adjust the width to your desired size
+    height: '1em',
+    width: '1em',
     marginRight: '0.5em',
 };
 
