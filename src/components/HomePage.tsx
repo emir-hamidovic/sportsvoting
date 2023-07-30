@@ -1,4 +1,4 @@
-import PollsComponent from './Polls';
+import PollsComponent from "./Polls";
 
 const HomePage = () => {
   return (

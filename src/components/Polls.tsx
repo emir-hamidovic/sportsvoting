@@ -1,22 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 const PollsComponent = () => {
   const [polls, setPolls] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get('http://localhost:8080/getpolls');
-        setPolls(response.data);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
 
-    fetchData();
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/getpolls');
+      setPolls(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
   }, []);
+  
+  useEffect(() => {
+    // Fetch data from Go server
+    fetchData();
+  }, [fetchData]); 
 
   return (
     <div className="App-polls">

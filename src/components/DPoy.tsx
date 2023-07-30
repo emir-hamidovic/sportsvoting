@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import StatsTable from './StatsTable';
 
@@ -47,20 +47,20 @@ export default function DPoy () {
     []
   );
 
-  useEffect(() => {
-    // Fetch data from Go server
-   const fetchData = async () => { await axios.get('http://localhost:8080/dpoy')
-      .then((response) => {
-        setData(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-      });
- 
-    }
-    fetchData();
 
+const fetchData = useCallback(async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/dpoy');
+    setData(response.data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
 }, []);
+
+useEffect(() => {
+  // Fetch data from Go server
+  fetchData();
+}, [fetchData]); 
 
   return (
     <div>

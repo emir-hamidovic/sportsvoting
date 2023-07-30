@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import StatsTable from './StatsTable';
 
@@ -99,20 +99,19 @@ export default function MVP () {
     []
   );
 
-  useEffect(() => {
-    // Fetch data from Go server
-   const fetchData = async () => { await axios.get('http://localhost:8080/mvp')
-      .then((response) => {
-        setData(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-      });
- 
-    }
-    fetchData();
 
+const fetchData = useCallback(async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/mvp');
+    setData(response.data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
 }, []);
+
+useEffect(() => {
+  fetchData();
+}, [fetchData]); 
 
   return (
     <div>
