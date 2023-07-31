@@ -1,19 +1,20 @@
-import PropTypes from 'prop-types';
-import {
-  Avatar,
-  Box,
-  Card,
-  Checkbox,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Typography
-} from '@mui/material';
-import { FlattenedAPIResponse } from './MVP';
+import {Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography} from '@mui/material';
+import { FlattenedAPIResponse } from '../utils/api-response';
+
+interface CustomersTableProps {
+  count: number;
+  items: FlattenedAPIResponse[];
+  onDeselectAll?: () => void;
+  onDeselectOne?: (customer: string) => void;
+  onPageChange?: (event: React.MouseEvent<HTMLButtonElement> | null, page: React.SetStateAction<number>) => void;
+  onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectAll?: () => void;
+  onSelectOne?: (customer: string) => void;
+  page: number;
+  rowsPerPage: number;
+  selected: string[];
+  columns: string[]
+}
 
 const getInitials = (name = '') => name
   .replace(/\s+/, ' ')
@@ -97,39 +98,24 @@ export const CustomersTable = (props: CustomersTableProps) => {
                 const isSelected = selected.includes(customer.playerid);
 
                 return (
-                  <TableRow
-                    hover
-                    key={customer.playerid}
-                    selected={isSelected}
-                  >
+                  <TableRow hover key={customer.playerid} selected={isSelected}>
                     <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={isSelected}
+                      <Checkbox checked={isSelected}
                         onChange={(event) => {
                           if (event.target.checked) {
                             onSelectOne?.(customer.playerid);
                           } else {
                             onDeselectOne?.(customer.playerid);
                           }
-                        }}
-                      />
+                        }} />
                     </TableCell>
                     <TableCell>
-                      <Stack
-                        alignItems="center"
-                        direction="row"
-                        spacing={2}
-                      >
-                        <Avatar>
-                          {getInitials(customer.name)}
-                        </Avatar>
-                        <Typography variant="subtitle2">
-                          {customer.name}
-                        </Typography>
+                      <Stack alignItems="center" direction="row" spacing={2}>
+                        <Avatar> {getInitials(customer.name)} </Avatar>
+                        <Typography variant="subtitle2"> {customer.name} </Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell>
-                    </TableCell>
+                    <TableCell></TableCell>
                     {tableFields.map((column) => (
                       <TableCell key={column}>
                         {customer[column]}
@@ -153,32 +139,3 @@ export const CustomersTable = (props: CustomersTableProps) => {
     </Card>
   );
 };
-
-CustomersTable.propTypes = {
-  count: PropTypes.number,
-  items: PropTypes.array,
-  onDeselectAll: PropTypes.func,
-  onDeselectOne: PropTypes.func,
-  onPageChange: PropTypes.func,
-  onRowsPerPageChange: PropTypes.func,
-  onSelectAll: PropTypes.func,
-  onSelectOne: PropTypes.func,
-  page: PropTypes.number,
-  rowsPerPage: PropTypes.number,
-  selected: PropTypes.array
-};
-
-interface CustomersTableProps {
-    count: number;
-    items: FlattenedAPIResponse[]; // Assuming Customer is the shape of a single item in the items array
-    onDeselectAll?: () => void;
-    onDeselectOne?: (customer: string) => void; // Pass the specific customer object when deselecting one
-    onPageChange?: (event: React.MouseEvent<HTMLButtonElement> | null, page: React.SetStateAction<number>) => void;
-    onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    onSelectAll?: () => void;
-    onSelectOne?: (customer: string) => void; // Pass the specific customer object when selecting one
-    page: number;
-    rowsPerPage: number;
-    selected: string[]; // Assuming selected is an array of Customer objects
-    columns: string[]
-}

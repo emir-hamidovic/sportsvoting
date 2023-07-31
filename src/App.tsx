@@ -1,22 +1,18 @@
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
-import MVP from './components/MVP';
-import SixMan from './components/SixMan';
-import Roy from './components/Roy';
-import DPoy from './components/DPoy';
+import TableData from './components/TableData';
 import Header from './components/Header';
-import "./styles/table.css";
 
 function App() {
   return (
     <BrowserRouter>
       <Header />
       <Routes>
-        <Route path="/mvp" element={<MVP />} />
-        <Route path="/sixthman" element={<SixMan />} />
-        <Route path="/roy" element={<Roy />} />
-        <Route path="/dpoy" element={<DPoy />} />
+        <Route path="/mvp" element={<TableData endpoint='http://localhost:8080/mvp'/>} />
+        <Route path="/sixthman" element={<TableData endpoint='http://localhost:8080/sixthman' />} />
+        <Route path="/roy" element={<TableData endpoint='http://localhost:8080/roy' />} />
+        <Route path="/dpoy" element={<TableData endpoint='http://localhost:8080/dpoy' />} />
         <Route path="/" element={<HomePage />} />
       </Routes>
     </BrowserRouter>

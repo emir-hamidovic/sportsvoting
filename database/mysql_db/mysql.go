@@ -101,15 +101,15 @@ func (m *MySqlDB) GetMVPStats(ctx context.Context, season string) (*sql.Rows, er
 }
 
 func (m *MySqlDB) GetDPOYStats(ctx context.Context, season string) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT name, gamesplayed, minutespergame, reboundspergame, stealspergame, blockspergame, position, dws, dbpm, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY dws DESC", season, season)
+	return m.db.QueryContext(ctx, "SELECT players.playerid, name, gamesplayed, minutespergame, reboundspergame, stealspergame, blockspergame, position, dws, dbpm, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY dws DESC", season, season)
 }
 
 func (m *MySqlDB) GetSixManStats(ctx context.Context, season string) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND gamesplayed - gamesstarted > gamesstarted ORDER BY per DESC", season, season)
+	return m.db.QueryContext(ctx, "SELECT players.playerid, name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND gamesplayed - gamesstarted > gamesstarted ORDER BY per DESC", season, season)
 }
 
 func (m *MySqlDB) GetROYStats(ctx context.Context, season string) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ws, bpm, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND rookieseason=1 AND minutespergame > 10 ORDER BY per DESC", season, season)
+	return m.db.QueryContext(ctx, "SELECT players.playerid, name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ws, bpm, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND rookieseason=1 AND minutespergame > 10 ORDER BY per DESC", season, season)
 }
 
 func (m *MySqlDB) GetPolls(ctx context.Context) (*sql.Rows, error) {
