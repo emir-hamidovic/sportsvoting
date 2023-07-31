@@ -1,13 +1,12 @@
-import React from 'react';
-import './header.css';
+import { Link } from 'react-router-dom';
 
 function Header() {
   return (
     <header className="header">
-      <h1 className="underline text-3xl">Sport Voting</h1>
+      <Link to="/"> <h1 className="underline text-3xl">Sport Voting</h1></Link>
       <div className="header-buttons">
-        <a href="#">Login</a>
-        <a href="#">Sign up</a>
+        <Link to="/login">Login</Link>
+        <Link to="/signup">Sign up</Link>
       </div>
     </header>
   );

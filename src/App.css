@@ -1,179 +1,155 @@
-/* header styles */
-@import url('https://cdn.syncfusion.com/ej2/material.css');
+.header {
+  background-color:#FFCE32;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+  padding: 0 40px;
+  width: 100%;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+  
+.title {
+  font-weight: bold;
+}
 
-.App-header {
-    background-image: linear-gradient(to right, #50c9c3, #96deda);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.logo {
+  font-weight: bold;
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.header-buttons a {
+  display: block;
+  padding: 12px 24px;
+  border-radius: 25px;
+  border: none;
+  color: #fff;
+  background-color: #1D63FF;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.header-buttons a:hover {
+  background-color: #105bfd;
+}
+
+.header-buttons a:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+}
+
+.polls {
+  background-color: #f9f9f9;
+  padding: 20px;
+}
+
+.poll {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.poll:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+}
+
+.poll img {
+  width: 100px;
+  height: 100px;
+  margin-right: 10px;
+}
+
+.poll-details {
+  flex: 1;
+}
+
+.poll-details h2 {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.poll-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.poll-actions button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.poll-actions button:hover {
+  background-color: #0069d9;
+}
+
+.vote-button, .results-button {
+  font-size: 24px;
+  padding: 12px 24px;
+  border-radius: 25px;
+  border: none;
+  color: #fff;
+  background-color: #1D63FF;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  width: 120px;
+}
+
+.vote-button:hover, .results-button:hover {
+  background-color: #0069d9;
+}
+
+.vote-button:focus, .results-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+}
+
+@media only screen and (max-width: 768px) {
+  .header {
     height: 60px;
     padding: 0 20px;
-    width: 100%;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 14px;
   }
-  
-  /* title styles */
-  .App-title {
-    font-weight: bold;
+
+  .logo {
+    font-size: 20px;
   }
-  
-  /* login button styles */
-  .App-login {
-    display: flex;
-    align-items: center;
+
+  .header-buttons {
+    gap: 8px;
   }
-  
-  .App-login button {
-    margin-left: 10px;
-    padding: 5px 10px;
-    background-color: transparent;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 18px;
-  }
-  
-  /* poll list styles */
-  .App-polls {
-    background-color: #f9f9f9;
-    padding: 20px;
-  }
-  
-  /* poll item styles */
-  .App-poll {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: white;
-    padding: 10px;
-    margin-bottom: 10px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 14px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-  }
-  
-  .App-poll:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* poll image styles */
-  .App-poll img {
-    width: 100px;
-    height: 100px;
-    margin-right: 10px;
-  }
-  
-  /* poll details styles */
-  .App-poll-details {
-    flex: 1;
-  }
-  
-  .App-poll-details h2 {
-    margin-top: 0;
-    margin-bottom: 5px;
-  }
-  
-  /* poll actions styles */
-  .App-poll-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-  }
-  
-  /* poll button styles */
-  .App-poll-actions button {
-    margin-top: 10px;
-    padding: 5px 10px;
-    background-color: #50c9c3;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 14px;
-    transition: all 0.3s ease;
-  }
-  
-  .App-poll-actions button:hover {
-    background-color: #37b2ac;
+
+  .header-buttons a {
+    font-size: 12px;
+    padding: 10px 20px;
   }
 
   .vote-button, .results-button {
-    font-size: 24px;
-    padding: 12px 24px;
-    border-radius: 25px;
-    border: none;
-    color: #fff;
-    background-color: #007bff;
-    transition: all 0.2s ease-in-out;
-    cursor: pointer;
-    width: 120px;
+    font-size: 18px;
+    padding: 10px 20px;
   }
-  
-  .vote-button:hover, .results-button:hover {
-    background-color: #0069d9;
-  }
-  
-  .vote-button:focus, .results-button:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
-  }
-  
-  @media only screen and (max-width: 768px) {
-    .vote-button, .results-button {
-      font-size: 18px;
-      padding: 10px 20px;
-    }
-
-    .sidebar{
-      z-index: 10000000;
-    }
-  }
-
-  .sidebar {
-    box-shadow: rgb(113 122 131 / 11%) 0px 7px 30px 0px;
-  }
-
-  .nav-item,
-  .navbar {
-    z-index: 10000;
-  }
-
-  .e-dlg-center-center, .e-quick-popup-wrapper.e-device{
-    z-index: 1000000 !important;
-  }
-
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  ::-webkit-scrollbar-thumb {
-    background-color: rgb(216, 216, 216);
-    border-radius: 40px;
-  }
-  ::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-
-  /* color-picker style  */
-
-  #preview {
-    background: transparent
-      url('https://ej2.syncfusion.com/react/demos/src/color-picker/images/pen.png')
-      no-repeat;
-    display: inline-block;
-    height: 80px;
-    margin: 10px 0;
-    min-width: 300px;
-    max-width: 600px;
-    background-color: #008000;
-  }
-
-  .e-input-group:not(.e-float-icon-left), .e-input-group.e-success:not(.e-float-icon-left), .e-input-group.e-warning:not(.e-float-icon-left), .e-input-group.e-error:not(.e-float-icon-left), .e-input-group.e-control-wrapper:not(.e-float-icon-left), .e-input-group.e-control-wrapper.e-success:not(.e-float-icon-left), .e-input-group.e-control-wrapper.e-warning:not(.e-float-icon-left), .e-input-group.e-control-wrapper.e-error:not(.e-float-icon-left){
-    border: none;
-  }
-  
-  
-  
+}

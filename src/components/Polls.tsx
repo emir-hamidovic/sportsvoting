@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
@@ -21,17 +21,17 @@ const PollsComponent = () => {
   }, [fetchData]); 
 
   return (
-    <div className="App-polls">
+    <div className="polls">
         {polls.map(poll => (
-          <div key={poll['id']} className="App-poll">
-            <div className="App-poll-image">
+          <div key={poll['id']} className="poll">
+            <div className="poll-image">
               <img src={poll['image']} alt={poll['name']} />
             </div>
-            <div className="App-poll-details">
+            <div className="poll-details">
               <h2>{poll['name']}</h2>
               <p>{poll['description']}</p>
             </div>
-            <div className="App-poll-actions">
+            <div className="poll-actions">
               <Link to={`/${poll['endpoint']}`}>
                 <button className="vote-button">Vote</button>
               </Link>

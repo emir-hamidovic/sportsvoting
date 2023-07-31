@@ -46,7 +46,7 @@ export const useCustomers = (data: FlattenedAPIResponse[], page: number, rowsPer
         () => {
         return applyPagination(data, page, rowsPerPage);
         },
-        [page, rowsPerPage]
+        [data, page, rowsPerPage]
     );
 };
 
