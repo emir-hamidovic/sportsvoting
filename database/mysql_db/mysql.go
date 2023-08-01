@@ -124,6 +124,17 @@ func (m *MySqlDB) GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Ro
 	return m.db.QueryContext(ctx, "SELECT p.name, v.votes_for FROM player_votes v INNER JOIN players p ON v.playerid=p.playerid INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? ORDER BY v.votes_for DESC", pollid)
 }
 
+func (m *MySqlDB) InsertPlayerVotes(pollid int64, playerid string) (sql.Result, error) {
+	var id int64
+	rows := m.db.QueryRow("SELECT id FROM player_votes WHERE pollid=? AND playerid=?", pollid, playerid)
+	err := rows.Scan(&id)
+	if err == sql.ErrNoRows {
+		return m.db.Exec("INSERT IGNORE INTO player_votes(playerid, pollid, votes_for) VALUES (?, ?, 1)", playerid, pollid)
+	} else {
+		return m.db.Exec("UPDATE player_votes SET votes_for = votes_for + 1 WHERE id=?", id)
+	}
+}
+
 func (m *MySqlDB) GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {
 	return m.db.QueryContext(ctx, "SELECT t.name, v.votes_for FROM team_votes v INNER JOIN teams t ON v.teamabbr=t.teamabbr INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? ORDER BY v.votes_for DESC", pollid)
 }

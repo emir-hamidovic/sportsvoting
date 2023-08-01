@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const PollsComponent = () => {
+  const navigate = useNavigate();
   const [polls, setPolls] = useState([]);
-
-
   const fetchData = useCallback(async () => {
     try {
       const response = await axios.get('http://localhost:8080/getpolls');
@@ -32,9 +31,7 @@ const PollsComponent = () => {
               <p>{poll['description']}</p>
             </div>
             <div className="poll-actions">
-              <Link to={`/${poll['endpoint']}`}>
-                <button className="vote-button">Vote</button>
-              </Link>
+              <button className="vote-button" onClick={() => navigate(`/${poll['endpoint']}/${poll['id']}`)}>Vote</button>
               <button className="results-button">Check Results</button>
             </div>
           </div>

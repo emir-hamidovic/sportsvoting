@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sportsvoting/players"
 	"time"
@@ -196,3 +197,36 @@ func mvpAward(w http.ResponseWriter, r *http.Request) {
 func playerVotes(w http.ResponseWriter, r *http.Request) {}
 
 func teamVotes(w http.ResponseWriter, r *http.Request) {}
+
+type VotePayload struct {
+	PlayerID string `json:"playerid"`
+	PollID   int64  `json:"pollid"`
+}
+
+func insertPlayerVotes(w http.ResponseWriter, r *http.Request) {
+	var payload VotePayload
+
+	// Decode the JSON request body into the VotePayload struct
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err = db.InsertPlayerVotes(payload.PollID, payload.PlayerID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := fmt.Sprintf("Voted for player %s in poll %d", payload.PlayerID, payload.PollID)
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(response))
+}
+
+func handleOptions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.WriteHeader(http.StatusOK)
+}

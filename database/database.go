@@ -34,6 +34,7 @@ type Database interface {
 	GetPolls(ctx context.Context) (*sql.Rows, error)
 	InsertPolls(id int64, name, description, image, endpoint string) (sql.Result, error)
 	GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
+	InsertPlayerVotes(pollid int64, playerid string) (sql.Result, error)
 	GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
 }
 

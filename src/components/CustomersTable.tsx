@@ -1,14 +1,15 @@
-import {Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography} from '@mui/material';
+import {Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography, Button} from '@mui/material';
 import { FlattenedAPIResponse } from '../utils/api-response';
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
+
 
 interface CustomersTableProps {
   count: number;
   items: FlattenedAPIResponse[];
-  onDeselectAll?: () => void;
   onDeselectOne?: (customer: string) => void;
   onPageChange?: (event: React.MouseEvent<HTMLButtonElement> | null, page: React.SetStateAction<number>) => void;
   onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSelectAll?: () => void;
   onSelectOne?: (customer: string) => void;
   page: number;
   rowsPerPage: number;
@@ -51,11 +52,9 @@ export const CustomersTable = (props: CustomersTableProps) => {
   const {
     count = 0,
     items = [],
-    onDeselectAll,
     onDeselectOne,
     onPageChange = () => {},
     onRowsPerPageChange,
-    onSelectAll,
     onSelectOne,
     page = 0,
     rowsPerPage = 0,
@@ -63,9 +62,27 @@ export const CustomersTable = (props: CustomersTableProps) => {
     columns
   } = props;
 
-  const selectedSome = (selected.length > 0) && (selected.length < items.length);
-  const selectedAll = (items.length > 0) && (selected.length === items.length);
   const tableFields = columns.slice(2);
+  const { pollId } = useParams();
+  const id = pollId ? parseInt(pollId, 10) : undefined;
+
+  const handleVote = () => {
+    const selectedCustomerIds = selected.length === 1 ? selected[0] : '';
+
+    const voteEndpoint = 'http://localhost:8080/playervotes/';
+    const payload = { playerid: selectedCustomerIds, pollid: Number(id) };
+    axios.post(voteEndpoint, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        console.log(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
 
   return (
     <Card>
@@ -73,19 +90,7 @@ export const CustomersTable = (props: CustomersTableProps) => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedAll}
-                    indeterminate={selectedSome}
-                    onChange={(event) => {
-                      if (event.target.checked) {
-                        onSelectAll?.();
-                      } else {
-                        onDeselectAll?.();
-                      }
-                    }}
-                  />
-                </TableCell>
+                <TableCell padding="checkbox"></TableCell>
                 {columns.map((column) => (
                 <TableCell key={column}>
                     {columnNameMapping[column]}
@@ -136,6 +141,16 @@ export const CustomersTable = (props: CustomersTableProps) => {
         rowsPerPage={rowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}
       />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          disabled={selected.length !== 1}
+          onClick={handleVote}
+        >
+          Vote
+        </Button>
+      </Box>
     </Card>
   );
 };

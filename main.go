@@ -10,6 +10,7 @@ import (
 	"sportsvoting/teams"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -89,8 +90,18 @@ func main() {
 	r.HandleFunc("/mvp", mvpAward)
 	r.HandleFunc("/mip", mipAward)
 	r.HandleFunc("/roy", royAward)
-	r.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes)
 	r.HandleFunc("/teamvotes/{id:[0-9]+}", teamVotes)
+	r.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")
+	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
+	r.HandleFunc("/playervotes/", handleOptions).Methods("OPTIONS")
+
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"http://localhost:3000"}),
+		handlers.AllowedMethods([]string{"GET", "POST"}),
+		handlers.AllowedHeaders([]string{"Content-Type"}),
+	)
+
+	http.Handle("/", corsHandler(r))
 
 	srv := &http.Server{
 		Addr:         ":8080",

@@ -5,9 +5,7 @@ export interface Item {
 }
 
 export interface SelectionHook {
-  handleDeselectAll: () => void;
   handleDeselectOne: (item: string) => void;
-  handleSelectAll: () => void;
   handleSelectOne: (item: string) => void;
   selected: string[];
 }
@@ -19,17 +17,10 @@ export const useSelection = (items: string[] = []): SelectionHook => {
     setSelected([]);
   }, [items]);
 
-  const handleSelectAll = useCallback(() => {
-    setSelected([...items]);
-  }, [items]);
-
   const handleSelectOne = useCallback((item: string) => {
-    setSelected((prevState) => [...prevState, item]);
+      setSelected([item]);
   }, []);
 
-  const handleDeselectAll = useCallback(() => {
-    setSelected([]);
-  }, []);
 
   const handleDeselectOne = useCallback((item: string) => {
     setSelected((prevState) => {
@@ -38,9 +29,7 @@ export const useSelection = (items: string[] = []): SelectionHook => {
   }, []);
 
   return {
-    handleDeselectAll,
     handleDeselectOne,
-    handleSelectAll,
     handleSelectOne,
     selected
   };

@@ -9,10 +9,10 @@ function App() {
     <BrowserRouter>
       <Header />
       <Routes>
-        <Route path="/mvp" element={<TableData endpoint='http://localhost:8080/mvp'/>} />
-        <Route path="/sixthman" element={<TableData endpoint='http://localhost:8080/sixthman' />} />
-        <Route path="/roy" element={<TableData endpoint='http://localhost:8080/roy' />} />
-        <Route path="/dpoy" element={<TableData endpoint='http://localhost:8080/dpoy' />} />
+        <Route path="/mvp/:pollId" element={<TableData endpoint='http://localhost:8080/mvp'/>} />
+        <Route path="/sixthman/:pollId" element={<TableData endpoint='http://localhost:8080/sixthman' />} />
+        <Route path="/roy/:pollId" element={<TableData endpoint='http://localhost:8080/roy' />} />
+        <Route path="/dpoy/:pollId" element={<TableData endpoint='http://localhost:8080/dpoy' />} />
         <Route path="/" element={<HomePage />} />
       </Routes>
     </BrowserRouter>

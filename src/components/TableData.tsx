@@ -80,11 +80,9 @@ export default function TableData ({ endpoint }: TableDataProps) {
       <CustomersTable
         count={data.length}
         items={customers}
-        onDeselectAll={customersSelection.handleDeselectAll}
         onDeselectOne={customersSelection.handleDeselectOne}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
-        onSelectAll={customersSelection.handleSelectAll}
         onSelectOne={customersSelection.handleSelectOne}
         page={page}
         rowsPerPage={rowsPerPage}
