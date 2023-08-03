@@ -1,9 +1,9 @@
-import PollsComponent from "./Polls";
+import Polls from "./Polls";
 
 const HomePage = () => {
   return (
     <div className="App">
-        <PollsComponent />
+        <Polls />
     </div>
   );
 };

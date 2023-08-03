@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"sportsvoting/players"
+	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type Poll struct {
@@ -194,7 +197,51 @@ func mvpAward(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(playerList)
 }
 
-func playerVotes(w http.ResponseWriter, r *http.Request) {}
+type Votes struct {
+	Name     string `json:"name"`
+	Value    int64  `json:"value"`
+	Pollname string `json:"pollname"`
+}
+
+func playerVotes(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
+	pollid := mux.Vars(r)["id"]
+	id, err := strconv.ParseInt(pollid, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	rows, err := db.GetPlayerPollVotes(ctx, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var playerList []Votes
+	for rows.Next() {
+		var v Votes
+		err := rows.Scan(&v.Name, &v.Value, &v.Pollname)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		playerList = append(playerList, v)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Security-Policy", "default-src 'self'")
+	json.NewEncoder(w).Encode(playerList)
+}
 
 func teamVotes(w http.ResponseWriter, r *http.Request) {}
 

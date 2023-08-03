@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const PollsComponent = () => {
+const Polls = () => {
   const navigate = useNavigate();
   const [polls, setPolls] = useState([]);
   const fetchData = useCallback(async () => {
@@ -32,7 +32,7 @@ const PollsComponent = () => {
             </div>
             <div className="poll-actions">
               <button className="vote-button" onClick={() => navigate(`/${poll['endpoint']}/${poll['id']}`)}>Vote</button>
-              <button className="results-button">Check Results</button>
+              <button className="results-button" onClick={() => navigate(`/results/${poll['id']}`)}>Check Results</button>
             </div>
           </div>
         ))}
@@ -40,4 +40,4 @@ const PollsComponent = () => {
   );
 };
 
-export default PollsComponent;
+export default Polls;
