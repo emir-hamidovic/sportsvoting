@@ -4,6 +4,7 @@ import HomePage from './components/HomePage';
 import TableData from './components/TableData';
 import Header from './components/Header';
 import Results from './components/Results';
+import Register from './components/Register';
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
         <Route path="/dpoy/:pollId" element={<TableData endpoint='http://localhost:8080/dpoy' />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/results/:pollId" element={<Results />} />
+        <Route path="/login" element={<Results />} />
+        <Route path="/signup" element={<Register />} />
       </Routes>
     </BrowserRouter>
   );
