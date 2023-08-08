@@ -9,8 +9,11 @@ require (
 	github.com/gorilla/mux v1.8.0
 )
 
+require golang.org/x/crypto v0.12.0
+
 require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	golang.org/x/net v0.10.0 // indirect
 )

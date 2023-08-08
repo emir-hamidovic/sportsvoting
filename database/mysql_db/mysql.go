@@ -96,7 +96,6 @@ func (m *MySqlDB) SelectTeamByAbbrevation(teamabbr string) *sql.Row {
 }
 
 func (m *MySqlDB) GetMVPStats(ctx context.Context, season string) (*sql.Rows, error) {
-	// need pictures for each player
 	return m.db.QueryContext(ctx, "SELECT players.playerid, name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY per DESC", season, season)
 }
 
@@ -137,4 +136,24 @@ func (m *MySqlDB) InsertPlayerVotes(pollid int64, playerid string) (sql.Result, 
 
 func (m *MySqlDB) GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {
 	return m.db.QueryContext(ctx, "SELECT t.name, v.votes_for FROM team_votes v INNER JOIN teams t ON v.teamabbr=t.teamabbr INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? ORDER BY v.votes_for DESC", pollid)
+}
+
+func (m *MySqlDB) GetUserByUsername(username string) *sql.Row {
+	return m.db.QueryRow("SELECT username, password, refresh_token, is_admin FROM users WHERE username=?", username)
+}
+
+func (m *MySqlDB) InsertNewUser(username, password, refresh_token string, is_admin bool) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO users(username, password, refresh_token, is_admin) VALUES (?, ?, ?, ?)", username, password, refresh_token, is_admin)
+}
+
+func (m *MySqlDB) UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error) {
+	return m.db.Exec("UPDATE users SET refresh_token=? WHERE username=?", refresh_token, username)
+}
+
+func (m *MySqlDB) UpdateUserIsAdmin(username string, is_admin bool) (sql.Result, error) {
+	return m.db.Exec("UPDATE users SET is_admin=? WHERE username=?", is_admin, username)
+}
+
+func (m *MySqlDB) UpdateUserPassword(username, password string) (sql.Result, error) {
+	return m.db.Exec("UPDATE users SET password=? WHERE username=?", password, username)
 }

@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sportsvoting/players"
 	"strconv"
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Poll struct {
@@ -18,6 +22,94 @@ type Poll struct {
 	Description string `json:"description"`
 	Image       string `json:"image"`
 	Endpoint    string `json:"endpoint"`
+}
+
+type User struct {
+	ID           int64  `json:"id,omitempty"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+	RefreshToken string `json:"refresh_token"`
+	IsAdmin      string `json:"is_admin"`
+}
+
+const privateKeyPath = ""
+
+func issueToken(user string) (string, error) {
+	keyBytes, err := ioutil.ReadFile(privateKeyPath)
+	if err != nil {
+		panic(fmt.Errorf("unable to read private key file: %w", err))
+	}
+
+	key, err := jwt.ParseEdPrivateKeyFromPEM(keyBytes)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse as ed private key: %w", err)
+	}
+
+	now := time.Now()
+	token := jwt.NewWithClaims(&jwt.SigningMethodEd25519{}, jwt.MapClaims{
+		"aud":      "api",
+		"nbf":      now.Unix(),
+		"iat":      now.Unix(),
+		"exp":      now.Add(time.Minute).Unix(),
+		"iss":      "http://localhost:8080",
+		"username": user,
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString(key)
+	if err != nil {
+		return "", fmt.Errorf("unable to sign token: %w", err)
+	}
+
+	return tokenString, nil
+}
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func HandleLogin(w http.ResponseWriter, r *http.Request) {
+	user, pwd, ok := r.BasicAuth()
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("missing basic auth"))
+		return
+	}
+
+	var u User
+	var match bool
+	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Password, &u.RefreshToken, &u.IsAdmin)
+	if err == sql.ErrNoRows {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("invalid credentials"))
+		return
+	} else {
+		hash, _ := HashPassword(pwd)
+		match = CheckPasswordHash(pwd, hash)
+	}
+
+	if !match {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("invalid credentials"))
+		return
+	}
+
+	// If matches, issue access and refresh token for that user
+	// Update refresh token info for that user in the database
+	tokenString, err := issueToken(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("unable to issue token:" + err.Error()))
+		return
+	}
+
+	_, _ = w.Write([]byte(tokenString + "\n"))
 }
 
 func getPolls(w http.ResponseWriter, r *http.Request) {
