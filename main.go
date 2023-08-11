@@ -94,6 +94,11 @@ func main() {
 	r.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")
 	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
 	r.HandleFunc("/playervotes/", handleOptions).Methods("OPTIONS")
+	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
+	r.HandleFunc("/login", handleLogin).Methods("POST")
+	r.HandleFunc("/register", handleRegister).Methods("POST")
+	r.HandleFunc("/logout", handleLogout)
+	r.HandleFunc("/refresh", handleRefresh)
 
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"http://localhost:3000"}),

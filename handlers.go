@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -32,10 +33,12 @@ type User struct {
 	IsAdmin      string `json:"is_admin"`
 }
 
-const privateKeyPath = ""
+const privateKeyAccessPath = "auth.ed"
+const privateKeyRefreshPath = "refresh.ed"
+const publicKeyRefreshPath = "refresh.ed.pub"
 
-func issueToken(user string) (string, error) {
-	keyBytes, err := ioutil.ReadFile(privateKeyPath)
+func issueToken(user, privatekey string) (string, error) {
+	keyBytes, err := ioutil.ReadFile(privatekey)
 	if err != nil {
 		panic(fmt.Errorf("unable to read private key file: %w", err))
 	}
@@ -50,7 +53,7 @@ func issueToken(user string) (string, error) {
 		"aud":      "api",
 		"nbf":      now.Unix(),
 		"iat":      now.Unix(),
-		"exp":      now.Add(time.Minute).Unix(),
+		"exp":      now.Add(10 * time.Minute).Unix(),
 		"iss":      "http://localhost:8080",
 		"username": user,
 	})
@@ -64,17 +67,45 @@ func issueToken(user string) (string, error) {
 	return tokenString, nil
 }
 
-func HashPassword(password string) (string, error) {
+func validateToken(tokenString, publickey string) (*jwt.Token, error) {
+	keyBytes, err := ioutil.ReadFile(publickey)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read public key file: %w", err)
+	}
+
+	key, err := jwt.ParseEdPublicKeyFromPEM(keyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse as ed private key: %w", err)
+	}
+
+	token, err := jwt.Parse(
+		tokenString,
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+
+			// return the single public key we trust
+			return key, nil
+		})
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse token string: %w", err)
+	}
+
+	return token, nil
+}
+
+func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
 
-func CheckPasswordHash(password, hash string) bool {
+func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
-func HandleLogin(w http.ResponseWriter, r *http.Request) {
+func handleLogin(w http.ResponseWriter, r *http.Request) {
 	user, pwd, ok := r.BasicAuth()
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
@@ -90,8 +121,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("invalid credentials"))
 		return
 	} else {
-		hash, _ := HashPassword(pwd)
-		match = CheckPasswordHash(pwd, hash)
+		match = checkPasswordHash(pwd, u.Password)
 	}
 
 	if !match {
@@ -100,16 +130,155 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If matches, issue access and refresh token for that user
-	// Update refresh token info for that user in the database
-	tokenString, err := issueToken(user)
+	accessToken, err := issueToken(user, privateKeyAccessPath)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("unable to issue token:" + err.Error()))
 		return
 	}
 
-	_, _ = w.Write([]byte(tokenString + "\n"))
+	refreshToken, err := issueToken(user, privateKeyRefreshPath)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("unable to issue token:" + err.Error()))
+		return
+	}
+
+	_, err = db.UpdateUserRefreshToken(user, refreshToken)
+	if err != nil {
+		fmt.Println("Error updating refresh token for user ", user)
+	}
+
+	cookie := http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		MaxAge:   86400,
+		SameSite: http.SameSiteNoneMode,
+	}
+	http.SetCookie(w, &cookie)
+
+	w.Write([]byte(accessToken))
+	//json.NewEncoder(w).Encode(accessToken)
+}
+
+func handleRegister(w http.ResponseWriter, r *http.Request) {
+	user, pwd, ok := r.BasicAuth()
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("missing user/pwd"))
+		return
+	}
+
+	var u User
+	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Password, &u.RefreshToken, &u.IsAdmin)
+	if err == sql.ErrNoRows {
+		hash, _ := hashPassword(pwd)
+		_, err := db.InsertNewUser(user, hash, "", false)
+		if err != nil {
+			fmt.Println("error inserting user")
+		}
+	} else if err != nil {
+		fmt.Println("error inserting user", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if u.Username != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("user already exists"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Register successful"))
+}
+
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		switch {
+		case errors.Is(err, http.ErrNoCookie):
+			http.Error(w, "cookie not found", http.StatusNoContent)
+		default:
+			fmt.Println(err)
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	refreshToken := cookie.Value
+	var u User
+	err = db.GetUserByRefreshToken(refreshToken).Scan(&u.Username)
+	if err != nil {
+		fmt.Println("can't find user by refresh token", err)
+	} else if u.Username != "" {
+		_, err := db.UpdateUserRefreshToken(u.Username, "")
+		if err != nil {
+			fmt.Println("error deleting refresh token from db ", err)
+		}
+	}
+
+	c := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, c)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func handleRefresh(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		switch {
+		case errors.Is(err, http.ErrNoCookie):
+			http.Error(w, "cookie not found", http.StatusUnauthorized)
+		default:
+			fmt.Println(err)
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	refreshToken := cookie.Value
+	var u User
+	err = db.GetUserByRefreshToken(refreshToken).Scan(&u.Username)
+	if err == sql.ErrNoRows {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		fmt.Println("can't find user by refresh token", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	} else if u.Username != "" {
+		token, err := validateToken(refreshToken, publicKeyRefreshPath)
+		if err != nil {
+			fmt.Println(refreshToken)
+			fmt.Println(err)
+			http.Error(w, "token not valid", http.StatusUnauthorized)
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid && claims["username"] == u.Username {
+			accessToken, err := issueToken(u.Username, privateKeyAccessPath)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("unable to issue token:" + err.Error()))
+				return
+			}
+
+			json.NewEncoder(w).Encode(accessToken)
+		} else {
+			fmt.Println("Invalid JWT Token")
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	}
 }
 
 func getPolls(w http.ResponseWriter, r *http.Request) {

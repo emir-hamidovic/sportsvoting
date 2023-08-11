@@ -37,6 +37,7 @@ type Database interface {
 	InsertPlayerVotes(pollid int64, playerid string) (sql.Result, error)
 	GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
 	GetUserByUsername(username string) *sql.Row
+	GetUserByRefreshToken(refresh_token string) *sql.Row
 	InsertNewUser(username, password, refresh_token string, is_admin bool) (sql.Result, error)
 	UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error)
 	UpdateUserIsAdmin(username string, is_admin bool) (sql.Result, error)

@@ -142,6 +142,10 @@ func (m *MySqlDB) GetUserByUsername(username string) *sql.Row {
 	return m.db.QueryRow("SELECT username, password, refresh_token, is_admin FROM users WHERE username=?", username)
 }
 
+func (m *MySqlDB) GetUserByRefreshToken(refresh_token string) *sql.Row {
+	return m.db.QueryRow("SELECT username FROM users WHERE refresh_token=?", refresh_token)
+}
+
 func (m *MySqlDB) InsertNewUser(username, password, refresh_token string, is_admin bool) (sql.Result, error) {
 	return m.db.Exec("INSERT INTO users(username, password, refresh_token, is_admin) VALUES (?, ?, ?, ?)", username, password, refresh_token, is_admin)
 }
