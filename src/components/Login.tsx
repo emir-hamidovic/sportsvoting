@@ -3,7 +3,6 @@ import useAuth from '../hooks/use-auth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 import axios from 'axios';
-const LOGIN_URL = '/auth';
 
 const Login = () => {
     const { setAuth, persist, setPersist } = useAuth();
@@ -33,10 +32,11 @@ const Login = () => {
         e.preventDefault();
 
         try {
-            const response = await axios.post(LOGIN_URL,
-                JSON.stringify({ user, pwd }),
+            const basicAuthToken = btoa(`${user}:${pwd}`);
+            const response = await axios.post("http://localhost:8080/login",
+                "",
                 {
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', Authorization: `Basic ${basicAuthToken}` },
                     withCredentials: true
                 }
             );
@@ -98,19 +98,14 @@ const Login = () => {
                 />
                 <button>Sign In</button>
                 <div className="persistCheck">
-                    <input
-                        type="checkbox"
-                        id="persist"
-                        onChange={togglePersist}
-                        checked={persist}
-                    />
+                    <input type="checkbox" id="persist" onChange={togglePersist} checked={persist}  />
                     <label htmlFor="persist">Trust This Device</label>
                 </div>
             </form>
             <p>
                 Need an Account?<br />
                 <span className="line">
-                    <Link to="/register">Sign Up</Link>
+                    <Link to="/signup">Sign Up</Link>
                 </span>
             </p>
         </section>

@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
-const REGISTER_URL = '/register';
 
 const Register = () => {
     const userRef: React.RefObject<HTMLInputElement> = useRef<HTMLInputElement>(null);
@@ -56,15 +55,14 @@ const Register = () => {
             return;
         }
         try {
-            const response = await axios.post(REGISTER_URL,
+            const basicAuthToken = btoa(`${user}:${pwd}`);
+            await axios.post("http://localhost:8080/register",
                 JSON.stringify({ user, pwd }),
                 {
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', Authorization: `Basic ${basicAuthToken}` },
                     withCredentials: true
                 }
             );
-            console.log(response?.data);
-            console.log(JSON.stringify(response))
             setSuccess(true);
             setUser('');
             setPwd('');
@@ -90,7 +88,7 @@ const Register = () => {
                 <section>
                     <h1>Success!</h1>
                     <p>
-                        <a href="#">Sign In</a>
+                        <Link to="/login">Sign In</Link>
                     </p>
                 </section>
             ) : (

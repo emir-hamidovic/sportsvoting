@@ -167,6 +167,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 func handleRegister(w http.ResponseWriter, r *http.Request) {
 	user, pwd, ok := r.BasicAuth()
 	if !ok {
+		fmt.Println("missing user/pwd")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("missing user/pwd"))
 		return
@@ -530,11 +531,4 @@ func insertPlayerVotes(w http.ResponseWriter, r *http.Request) {
 	response := fmt.Sprintf("Voted for player %s in poll %d", payload.PlayerID, payload.PollID)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(response))
-}
-
-func handleOptions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-	w.Header().Set("Access-Control-Allow-Methods", "POST")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.WriteHeader(http.StatusOK)
 }

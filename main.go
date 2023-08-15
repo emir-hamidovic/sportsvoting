@@ -10,8 +10,8 @@ import (
 	"sportsvoting/teams"
 	"time"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 func InsertTeamAndPlayerInfo(db database.Database) (map[string]players.Player, error) {
@@ -82,8 +82,6 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-
-	// Will need a custom endpoint
 	r.HandleFunc("/getpolls", getPolls)
 	r.HandleFunc("/sixthman", sixManAward)
 	r.HandleFunc("/dpoy", dpoyAward)
@@ -93,24 +91,22 @@ func main() {
 	r.HandleFunc("/teamvotes/{id:[0-9]+}", teamVotes)
 	r.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")
 	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
-	r.HandleFunc("/playervotes/", handleOptions).Methods("OPTIONS")
-	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
 	r.HandleFunc("/login", handleLogin).Methods("POST")
 	r.HandleFunc("/register", handleRegister).Methods("POST")
 	r.HandleFunc("/logout", handleLogout)
 	r.HandleFunc("/refresh", handleRefresh)
 
-	corsHandler := handlers.CORS(
-		handlers.AllowedOrigins([]string{"http://localhost:3000"}),
-		handlers.AllowedMethods([]string{"GET", "POST"}),
-		handlers.AllowedHeaders([]string{"Content-Type"}),
-	)
-
-	http.Handle("/", corsHandler(r))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost/"},
+		AllowedHeaders:   []string{"Content-type", "Authorization"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
+		AllowCredentials: true,
+		Debug:            true,
+	})
 
 	srv := &http.Server{
 		Addr:         ":8080",
-		Handler:      r,
+		Handler:      c.Handler(r),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
