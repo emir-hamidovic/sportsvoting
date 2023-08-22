@@ -95,6 +95,13 @@ func main() {
 	r.HandleFunc("/register", handleRegister).Methods("POST")
 	r.HandleFunc("/logout", handleLogout)
 	r.HandleFunc("/refresh", handleRefresh)
+	r.HandleFunc("/users/get", handleUserList)
+	r.HandleFunc("/users/delete/{id:[0-9]+}", handleUserDelete).Methods("DELETE")
+	r.HandleFunc("/api/get-user/{id:[0-9]+}", handleGetUserByID)
+	r.HandleFunc("/api/update-email", updateUserEmail).Methods("POST")
+	r.HandleFunc("/api/update-username", updateUsername).Methods("POST")
+	r.HandleFunc("/api/update-password", updatePassword).Methods("POST")
+	r.HandleFunc("/api/update-admin", updateAdmin).Methods("POST")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost/"},

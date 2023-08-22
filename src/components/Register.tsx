@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const Register = () => {
     const userRef: React.RefObject<HTMLInputElement> = useRef<HTMLInputElement>(null);
@@ -22,6 +23,10 @@ const Register = () => {
     const [matchPwd, setMatchPwd] = useState('');
     const [validMatch, setValidMatch] = useState(false);
     const [matchFocus, setMatchFocus] = useState(false);
+
+    const [email, setEmail] = useState('');
+    const [validEmail, setValidEmail] = useState(false);
+    const [emailFocus, setEmailFocus] = useState(false);
 
     const [errMsg, setErrMsg] = useState('');
     const [success, setSuccess] = useState(false);
@@ -42,6 +47,10 @@ const Register = () => {
     }, [pwd, matchPwd])
 
     useEffect(() => {
+        setValidEmail(EMAIL_REGEX.test(email));
+    }, [email]);
+
+    useEffect(() => {
         setErrMsg('');
     }, [user, pwd, matchPwd])
 
@@ -50,14 +59,23 @@ const Register = () => {
         // if button enabled with JS hack
         const v1 = USER_REGEX.test(user);
         const v2 = PWD_REGEX.test(pwd);
-        if (!v1 || !v2) {
+        const v3 = EMAIL_REGEX.test(email);
+
+        if (!v1 || !v2 || !v3) {
             setErrMsg("Invalid Entry");
             return;
         }
+
         try {
+            const userData = {
+                user,
+                pwd,
+                email
+            };
+
             const basicAuthToken = btoa(`${user}:${pwd}`);
             await axios.post("http://localhost:8080/register",
-                JSON.stringify({ user, pwd }),
+                JSON.stringify(userData),
                 {
                     headers: { 'Content-Type': 'application/json', Authorization: `Basic ${basicAuthToken}` },
                     withCredentials: true
@@ -67,6 +85,7 @@ const Register = () => {
             setUser('');
             setPwd('');
             setMatchPwd('');
+            setEmail('');
         } catch (err: any) {
             if (!err?.response) {
                 setErrMsg('No Server Response');
@@ -121,6 +140,27 @@ const Register = () => {
                             Letters, numbers, underscores, hyphens allowed.
                         </p>
 
+                        <label htmlFor="email">
+                            Email:
+                            <FontAwesomeIcon icon={faCheck} className={validEmail ? "valid" : "hide"} />
+                            <FontAwesomeIcon icon={faTimes} className={validEmail || !email ? "hide" : "invalid"} />
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            onChange={(e) => setEmail(e.target.value)}
+                            value={email}
+                            required
+                            aria-invalid={validEmail ? "false" : "true"}
+                            aria-describedby="emailnote"
+                            onFocus={() => setEmailFocus(true)}
+                            onBlur={() => setEmailFocus(false)}
+                        />
+                        <p id="emailnote" className={emailFocus && email && !validEmail ? "instructions" : "offscreen"}>
+                            <FontAwesomeIcon icon={faInfoCircle} />
+                            Please enter a valid email address.
+                        </p>
+
 
                         <label htmlFor="password">
                             Password:
@@ -167,7 +207,7 @@ const Register = () => {
                             Must match the first password input field.
                         </p>
 
-                        <button disabled={!validName || !validPwd || !validMatch ? true : false}>Sign Up</button>
+                        <button disabled={!validName || !validPwd || !validMatch || !validEmail ? true : false}>Sign Up</button>
                     </form>
                     <p>
                         Already registered?<br />

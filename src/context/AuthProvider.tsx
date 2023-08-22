@@ -5,7 +5,7 @@ interface AuthData {
     pwd: string;
     accessToken: string;
 }
-  
+
 interface AuthContextType {
     auth: AuthData;
     setAuth: React.Dispatch<React.SetStateAction<AuthData>>;

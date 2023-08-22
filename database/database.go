@@ -38,10 +38,16 @@ type Database interface {
 	GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
 	GetUserByUsername(username string) *sql.Row
 	GetUserByRefreshToken(refresh_token string) *sql.Row
-	InsertNewUser(username, password, refresh_token string, is_admin bool) (sql.Result, error)
+	GetUserByID(id int64) *sql.Row
+	InsertNewUser(username, email, password, refresh_token string, is_admin bool) (sql.Result, error)
 	UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error)
 	UpdateUserIsAdmin(username string, is_admin bool) (sql.Result, error)
 	UpdateUserPassword(username, password string) (sql.Result, error)
+	UpdateUserEmail(username, email string) (sql.Result, error)
+	UpdateUserUsername(oldusername, username string) (sql.Result, error)
+	UpdateUserProfilePic(username, profile_pic string) (sql.Result, error)
+	DeleteUser(id int64) (sql.Result, error)
+	GetAllUsers() (*sql.Rows, error)
 }
 
 type Config struct {

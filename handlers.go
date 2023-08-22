@@ -28,8 +28,10 @@ type Poll struct {
 type User struct {
 	ID           int64  `json:"id,omitempty"`
 	Username     string `json:"username"`
+	Email        string `json:"email"`
 	Password     string `json:"password"`
 	RefreshToken string `json:"refresh_token"`
+	ProfilePic   string `json:"profile_pic"`
 	IsAdmin      string `json:"is_admin"`
 }
 
@@ -115,7 +117,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	var match bool
-	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Password, &u.RefreshToken, &u.IsAdmin)
+	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("invalid credentials"))
@@ -161,7 +163,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	w.Write([]byte(accessToken))
-	//json.NewEncoder(w).Encode(accessToken)
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -174,10 +175,10 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u User
-	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Password, &u.RefreshToken, &u.IsAdmin)
+	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
 	if err == sql.ErrNoRows {
 		hash, _ := hashPassword(pwd)
-		_, err := db.InsertNewUser(user, hash, "", false)
+		_, err := db.InsertNewUser(user, "email needed here", hash, "", false)
 		if err != nil {
 			fmt.Println("error inserting user")
 		}
@@ -282,6 +283,192 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleUserList(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.GetAllUsers()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var users []User
+
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &user.ProfilePic, &user.IsAdmin); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		users = append(users, user)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var u User
+	err = db.GetUserByID(id).Scan(&u.Username, &u.Email, &u.ProfilePic, &u.IsAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(u); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func handleUserDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := db.DeleteUser(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	response := map[string]interface{}{
+		"message":       "User deleted successfully",
+		"rows_affected": rowsAffected,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func updateUserEmail(w http.ResponseWriter, r *http.Request) {
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	updatedEmail := u.Email
+
+	err := db.GetUserByUsername(u.Username).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.UpdateUserEmail(u.Username, updatedEmail)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func updateUsername(w http.ResponseWriter, r *http.Request) {
+	var users struct {
+		OldUser  string `json:"olduser"`
+		Username string `json:"username"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&users); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.UpdateUserUsername(users.OldUser, users.Username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func updatePassword(w http.ResponseWriter, r *http.Request) {
+	var newPasswords struct {
+		OldPassword string `json:"oldPassword"`
+		NewPassword string `json:"newPassword"`
+		Username    string `json:"username"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&newPasswords); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var u User
+	err := db.GetUserByUsername(newPasswords.Username).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !checkPasswordHash(newPasswords.OldPassword, u.Password) {
+		http.Error(w, "Incorrect old password", http.StatusUnauthorized)
+		return
+	}
+
+	u.Password, err = hashPassword(newPasswords.NewPassword)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.UpdateUserPassword(u.Username, u.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func updateAdmin(w http.ResponseWriter, r *http.Request) {
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := db.GetUserByID(u.ID).Scan(&u.Username, &u.Email, &u.ProfilePic, &u.IsAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	isAdmin, err := strconv.ParseBool(u.IsAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.UpdateUserIsAdmin(u.Username, !isAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func getPolls(w http.ResponseWriter, r *http.Request) {
 	var polls []Poll
 
@@ -295,7 +482,6 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	// Iterate over the rows and populate the polls slice
 	for rows.Next() {
 		var poll Poll
 		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.Endpoint)
@@ -311,11 +497,9 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	// Set the response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	// Write the JSON response
 	w.Write(pollsJSON)
 }
 

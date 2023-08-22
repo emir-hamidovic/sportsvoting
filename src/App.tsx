@@ -6,6 +6,8 @@ import Header from './components/Header';
 import Results from './components/Results';
 import Register from './components/Register';
 import Login from './components/Login';
+import AccountEditPage from './components/AccountEditPage';
+import UserListPage from './components/UserList';
 
 function App() {
   return (
@@ -20,6 +22,9 @@ function App() {
         <Route path="/results/:pollId" element={<Results />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Register />} />
+        <Route path="/edit-user/:userId" element={<AccountEditPage />} />
+        <Route path="/admin/edit-user/:userId" element={<AccountEditPage />} />
+        <Route path="/admin/users" element={<UserListPage />} />
       </Routes>
     </BrowserRouter>
   );

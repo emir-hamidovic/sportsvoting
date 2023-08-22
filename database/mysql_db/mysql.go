@@ -139,15 +139,19 @@ func (m *MySqlDB) GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows
 }
 
 func (m *MySqlDB) GetUserByUsername(username string) *sql.Row {
-	return m.db.QueryRow("SELECT username, password, refresh_token, is_admin FROM users WHERE username=?", username)
+	return m.db.QueryRow("SELECT username, email, password, refresh_token, profile_pic, is_admin FROM users WHERE username=?", username)
+}
+
+func (m *MySqlDB) GetUserByID(id int64) *sql.Row {
+	return m.db.QueryRow("SELECT username, email, profile_pic, is_admin FROM users WHERE id=?", id)
 }
 
 func (m *MySqlDB) GetUserByRefreshToken(refresh_token string) *sql.Row {
 	return m.db.QueryRow("SELECT username FROM users WHERE refresh_token=?", refresh_token)
 }
 
-func (m *MySqlDB) InsertNewUser(username, password, refresh_token string, is_admin bool) (sql.Result, error) {
-	return m.db.Exec("INSERT INTO users(username, password, refresh_token, is_admin) VALUES (?, ?, ?, ?)", username, password, refresh_token, is_admin)
+func (m *MySqlDB) InsertNewUser(username, email, password, refresh_token string, is_admin bool) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO users(username, email, password, refresh_token, is_admin) VALUES (?, ?, ?, ?)", username, email, password, refresh_token, is_admin)
 }
 
 func (m *MySqlDB) UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error) {
@@ -160,4 +164,24 @@ func (m *MySqlDB) UpdateUserIsAdmin(username string, is_admin bool) (sql.Result,
 
 func (m *MySqlDB) UpdateUserPassword(username, password string) (sql.Result, error) {
 	return m.db.Exec("UPDATE users SET password=? WHERE username=?", password, username)
+}
+
+func (m *MySqlDB) UpdateUserEmail(username, email string) (sql.Result, error) {
+	return m.db.Exec("UPDATE users SET email=? WHERE username=?", email, username)
+}
+
+func (m *MySqlDB) UpdateUserUsername(oldusername, username string) (sql.Result, error) {
+	return m.db.Exec("UPDATE users SET username=? WHERE username=?", username, oldusername)
+}
+
+func (m *MySqlDB) UpdateUserProfilePic(username, profile_pic string) (sql.Result, error) {
+	return m.db.Exec("UPDATE users SET profile_pic=? WHERE username=?", profile_pic, username)
+}
+
+func (m *MySqlDB) DeleteUser(id int64) (sql.Result, error) {
+	return m.db.Exec("DELETE FROM users WHERE id=?", id)
+}
+
+func (m *MySqlDB) GetAllUsers() (*sql.Rows, error) {
+	return m.db.Query("SELECT id, username, email, password, refresh_token, profile_pic, is_admin FROM users")
 }
