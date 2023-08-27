@@ -19,7 +19,7 @@ function Header() {
 
   const editAcc = () => {
     handleClose();
-    navigate('/account')
+    navigate(`/edit-user/${auth?.id}`)
   }
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -30,7 +30,6 @@ function Header() {
     setAnchorEl(null);
   };
 
-auth.accessToken = "AAA";
   console.log(auth);
   return (
     <header className="header">

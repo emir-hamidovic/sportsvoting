@@ -139,7 +139,7 @@ func (m *MySqlDB) GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows
 }
 
 func (m *MySqlDB) GetUserByUsername(username string) *sql.Row {
-	return m.db.QueryRow("SELECT username, email, password, refresh_token, profile_pic, is_admin FROM users WHERE username=?", username)
+	return m.db.QueryRow("SELECT id, username, email, password, refresh_token, profile_pic, is_admin FROM users WHERE username=?", username)
 }
 
 func (m *MySqlDB) GetUserByID(id int64) *sql.Row {
@@ -151,7 +151,7 @@ func (m *MySqlDB) GetUserByRefreshToken(refresh_token string) *sql.Row {
 }
 
 func (m *MySqlDB) InsertNewUser(username, email, password, refresh_token string, is_admin bool) (sql.Result, error) {
-	return m.db.Exec("INSERT INTO users(username, email, password, refresh_token, is_admin) VALUES (?, ?, ?, ?)", username, email, password, refresh_token, is_admin)
+	return m.db.Exec("INSERT INTO users(username, email, password, refresh_token, is_admin) VALUES (?, ?, ?, ?, ?)", username, email, password, refresh_token, is_admin)
 }
 
 func (m *MySqlDB) UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error) {

@@ -4,6 +4,7 @@ interface AuthData {
     user: string;
     pwd: string;
     accessToken: string;
+    id: number;
 }
 
 interface AuthContextType {
@@ -15,14 +16,14 @@ interface AuthContextType {
 
 // Create the AuthContext with the specified type
 const AuthContext = createContext<AuthContextType>({
-    auth: {user: "", pwd: "", accessToken: ""},
+    auth: {user: "", pwd: "", accessToken: "", id: 0},
     setAuth: () => {},
     persist: false,
     setPersist: () => {},
 });
 
-export const AuthProvider = (children: React.ReactNode) => {
-    const [auth, setAuth] = useState<AuthData>({user: "", pwd: "", accessToken: ""});
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [auth, setAuth] = useState<AuthData>({user: "", pwd: "", accessToken: "", id: 0});
     const [persist, setPersist] = useState<boolean>(JSON.parse(localStorage.getItem("persist") || "") || false);
 
     return (

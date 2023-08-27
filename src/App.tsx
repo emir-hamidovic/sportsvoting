@@ -8,10 +8,12 @@ import Register from './components/Register';
 import Login from './components/Login';
 import AccountEditPage from './components/AccountEditPage';
 import UserListPage from './components/UserList';
+import { AuthProvider } from './context/AuthProvider';
 
 function App() {
   return (
     <BrowserRouter>
+    <AuthProvider>
       <Header />
       <Routes>
         <Route path="/mvp/:pollId" element={<TableData endpoint='http://localhost:8080/mvp'/>} />
@@ -26,6 +28,7 @@ function App() {
         <Route path="/admin/edit-user/:userId" element={<AccountEditPage />} />
         <Route path="/admin/users" element={<UserListPage />} />
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

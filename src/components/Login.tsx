@@ -40,9 +40,10 @@ const Login = () => {
                     withCredentials: true
                 }
             );
-            console.log(JSON.stringify(response?.data));
-            const accessToken = response?.data?.accessToken;
-            setAuth({ user, pwd, accessToken });
+
+            const accessToken = response?.data?.access_token;
+            const id = response?.data?.id;
+            setAuth({ user, pwd, accessToken, id });
             setUser('');
             setPwd('');
             navigate(from, { replace: true });

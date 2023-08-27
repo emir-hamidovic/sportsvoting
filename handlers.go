@@ -117,7 +117,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	var match bool
-	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(user).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("invalid credentials"))
@@ -162,7 +162,21 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	w.Write([]byte(accessToken))
+	type Response struct {
+		Id          int64  `json:"id"`
+		AccessToken string `json:"access_token"`
+	}
+
+	var res Response
+	res.Id = u.ID
+	res.AccessToken = accessToken
+	jsonRes, err := json.Marshal(res)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Println("Error marshaling json")
+	}
+
+	w.Write(jsonRes)
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -175,12 +189,12 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u User
-	err := db.GetUserByUsername(user).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(user).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
 	if err == sql.ErrNoRows {
 		hash, _ := hashPassword(pwd)
 		_, err := db.InsertNewUser(user, "email needed here", hash, "", false)
 		if err != nil {
-			fmt.Println("error inserting user")
+			fmt.Println("error inserting user", err)
 		}
 	} else if err != nil {
 		fmt.Println("error inserting user", err)
@@ -369,7 +383,7 @@ func updateUserEmail(w http.ResponseWriter, r *http.Request) {
 
 	updatedEmail := u.Email
 
-	err := db.GetUserByUsername(u.Username).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(u.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -415,7 +429,7 @@ func updatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u User
-	err := db.GetUserByUsername(newPasswords.Username).Scan(&u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(newPasswords.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
