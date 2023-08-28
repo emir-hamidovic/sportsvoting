@@ -4,6 +4,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   email         VARCHAR(64),
   password      TEXT,
   refresh_token TEXT,
-  profile_pic   TEXT,
+  profile_pic   VARCHAR(255) DEFAULT "",
   is_admin      BOOLEAN
 );

@@ -182,9 +182,17 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 func handleRegister(w http.ResponseWriter, r *http.Request) {
 	user, pwd, ok := r.BasicAuth()
 	if !ok {
-		fmt.Println("missing user/pwd")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("missing user/pwd"))
+		return
+	}
+
+	type Register struct {
+		Email string `json:"email"`
+	}
+	var register Register
+	if err := json.NewDecoder(r.Body).Decode(&register); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -192,7 +200,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	err := db.GetUserByUsername(user).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
 	if err == sql.ErrNoRows {
 		hash, _ := hashPassword(pwd)
-		_, err := db.InsertNewUser(user, "email needed here", hash, "", false)
+		_, err := db.InsertNewUser(user, register.Email, hash, "", false)
 		if err != nil {
 			fmt.Println("error inserting user", err)
 		}
@@ -256,7 +264,6 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, http.ErrNoCookie):
 			http.Error(w, "cookie not found", http.StatusUnauthorized)
 		default:
-			fmt.Println(err)
 			http.Error(w, "server error", http.StatusInternalServerError)
 		}
 		return
@@ -275,8 +282,6 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 	} else if u.Username != "" {
 		token, err := validateToken(refreshToken, publicKeyRefreshPath)
 		if err != nil {
-			fmt.Println(refreshToken)
-			fmt.Println(err)
 			http.Error(w, "token not valid", http.StatusUnauthorized)
 			return
 		}
@@ -291,7 +296,6 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 
 			json.NewEncoder(w).Encode(accessToken)
 		} else {
-			fmt.Println("Invalid JWT Token")
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	}
@@ -333,11 +337,14 @@ func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u User
-	err = db.GetUserByID(id).Scan(&u.Username, &u.Email, &u.ProfilePic, &u.IsAdmin)
+	var profilepic sql.NullString
+	err = db.GetUserByID(id).Scan(&u.Username, &u.Email, &profilepic, &u.IsAdmin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	u.ProfilePic = profilepic.String
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(u); err != nil {
@@ -382,8 +389,7 @@ func updateUserEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedEmail := u.Email
-
-	err := db.GetUserByUsername(u.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(u.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &sql.NullString{}, &u.IsAdmin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -429,7 +435,7 @@ func updatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u User
-	err := db.GetUserByUsername(newPasswords.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(newPasswords.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &sql.NullString{}, &u.IsAdmin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -456,13 +462,14 @@ func updatePassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateAdmin(w http.ResponseWriter, r *http.Request) {
-	var u User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+	var id int64
+	if err := json.NewDecoder(r.Body).Decode(&id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := db.GetUserByID(u.ID).Scan(&u.Username, &u.Email, &u.ProfilePic, &u.IsAdmin)
+	var u User
+	err := db.GetUserByID(id).Scan(&u.Username, &u.Email, &u.ProfilePic, &u.IsAdmin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

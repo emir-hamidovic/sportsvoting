@@ -15,6 +15,10 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import useAuth from '../hooks/use-auth';
 
+const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
+const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 const AccountEditPage: React.FC = () => {
   const { auth } = useAuth();
   const { userId } = useParams();
@@ -26,8 +30,10 @@ const AccountEditPage: React.FC = () => {
     newPassword: '',
   });
 
+  const [initialEmail, setInitialEmail] = useState('');
+
   useEffect(() => {
-    axios.get(`/api/get-user/${userId}`)
+    axios.get(`http://localhost:8080/api/get-user/${userId}`)
       .then(response => {
         const userData = response.data;
         setUserInfo({
@@ -37,12 +43,12 @@ const AccountEditPage: React.FC = () => {
           oldPassword: '', // Leave empty for security reasons
           newPassword: '', // Leave empty for security reasons
         });
+        setInitialEmail(userData.email);
       })
       .catch(error => {
         console.error(error);
       });
-  }, []);
-
+  }, [userId]);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -54,20 +60,36 @@ const AccountEditPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const v1 = USER_REGEX.test(userInfo.username);
+    const v2 = PWD_REGEX.test(userInfo.newPassword);
+    const v3 = EMAIL_REGEX.test(userInfo.email);
+
+    if ((!v1 && userInfo.username !== "") || (!v2 && userInfo.newPassword !== "") || (!v3 && userInfo.email !== "")) {
+        setErrorMessage("Invalid Entry");
+        return;
+    }
+
     try {
-        await axios.post('/api/update-username', {olduser: auth.user, username: userInfo.username});
-        await axios.post('/api/update-email', {email: userInfo.email, username: auth.user});
-        await axios.post('/api/update-password', {
+      if(auth.user !== userInfo.username) {
+        await axios.post('http://localhost:8080/api/update-username', {olduser: auth.user, username: userInfo.username});
+        auth.user = userInfo.username;
+      }
+
+      if (initialEmail !== userInfo.email) {
+        await axios.post('http://localhost:8080/api/update-email', {email: userInfo.email, username: auth.user});
+      }
+
+      if (userInfo.newPassword !== "") {
+        await axios.post('http://localhost:8080/api/update-password', {
             oldPassword: userInfo.oldPassword,
             newPassword: userInfo.newPassword,
             username: auth.user
         });
+      }
 
-        auth.user = userInfo.username;
-
-        setSuccessMessage('Account information updated successfully!');
+      setSuccessMessage('Account information updated successfully!');
     } catch (error) {
-        setErrorMessage('An error occurred. Please try again later.');
+      setErrorMessage('An error occurred. Please try again later.');
     }
     
     setUserInfo({ ...userInfo, oldPassword: '', newPassword: '' });

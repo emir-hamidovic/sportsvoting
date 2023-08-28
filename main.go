@@ -108,7 +108,6 @@ func main() {
 		AllowedHeaders:   []string{"Content-type", "Authorization"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
 		AllowCredentials: true,
-		Debug:            true,
 	})
 
 	srv := &http.Server{
