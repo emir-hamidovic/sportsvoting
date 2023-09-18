@@ -69,12 +69,11 @@ func main() {
 		log.Fatal(err)
 	}*/
 
-	// Need a better solution for inserting pictures
 	polls := []Poll{
-		{1, "MVP", "Description for MVP", "https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/ELCVCAZWP5F5LPYIILNXKWO5FU.jpg", "mvp"},
-		{2, "ROY", "Description for ROY", "https://pbs.twimg.com/media/Fj26PZrXkAAGPo4?format=jpg&name=4096x4096", "roy"},
-		{3, "DPOY", "Description for DPOY", "https://pbs.twimg.com/media/Fj26CtNXwAESyDv?format=jpg&name=4096x4096", "dpoy"},
-		{4, "Sixth Man", "Description for 6-man", "https://pbs.twimg.com/media/Fj26barWYAMeoZp?format=jpg&name=4096x4096", "sixthman"},
+		{1, "MVP", "Description for MVP", "mvp-trophy.jpg", "mvp"},
+		{2, "ROY", "Description for ROY", "roy-trophy.jpeg", "roy"},
+		{3, "DPOY", "Description for DPOY", "dpoy-trophy.jpeg", "dpoy"},
+		{4, "Sixth Man", "Description for 6-man", "6moy-trophy.jpeg", "sixthman"},
 	}
 
 	for _, val := range polls {
@@ -102,6 +101,7 @@ func main() {
 	r.HandleFunc("/api/update-username", updateUsername).Methods("POST")
 	r.HandleFunc("/api/update-password", updatePassword).Methods("POST")
 	r.HandleFunc("/api/update-admin", updateAdmin).Methods("POST")
+	r.HandleFunc("/api/upload-profile-pic", uploadProfilePicHandler).Methods("POST")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost/"},

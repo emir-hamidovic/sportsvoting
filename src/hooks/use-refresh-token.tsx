@@ -8,15 +8,14 @@ const useRefreshToken = () => {
         const response = await axios.get('http://localhost:8080/refresh', {
             withCredentials: true
         });
+
         setAuth(prev => {
-            console.log(JSON.stringify(prev));
-            console.log(response.data.accessToken);
             return {
                 ...prev,
-                accessToken: response.data.accessToken
+                accessToken: response.data
             }
         });
-        return response.data.accessToken;
+        return response.data;
     }
     return refresh;
 };

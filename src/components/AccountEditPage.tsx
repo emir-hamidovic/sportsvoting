@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -31,6 +31,7 @@ const AccountEditPage: React.FC = () => {
   });
 
   const [initialEmail, setInitialEmail] = useState('');
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     axios.get(`http://localhost:8080/api/get-user/${userId}`)
@@ -95,15 +96,49 @@ const AccountEditPage: React.FC = () => {
     setUserInfo({ ...userInfo, oldPassword: '', newPassword: '' });
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileInput = e.target;
+  
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+      const fileToUpload = fileInput.files[0];
+      console.log(fileToUpload);
+      try {
+        const formData = new FormData();
+        formData.append('profileImage', fileToUpload, userInfo.username + "-" + userId + ".jpg");
+        formData.append("username", userInfo.username);
+    
+        const response = await axios.post('http://localhost:8080/api/upload-profile-pic', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        console.log(response);
+    
+        if (response.data.success) {
+          setUserInfo({ ...userInfo, profile_pic: response.data.fileName });
+          setSuccessMessage('Profile picture updated successfully!');
+        } else {
+          setErrorMessage('Failed to upload profile picture');
+        }
+      } catch (error) {
+        setErrorMessage('An error occurred while uploading the profile picture.');
+      }
+    }
+  };
+  
+  console.log(userInfo.profile_pic);
   return (
     <Container maxWidth="lg">
       <Paper elevation={3} sx={{ padding: 3 }}>
         <Grid container spacing={3}>
           <Grid item md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Avatar src={userInfo.profile_pic} sx={{ width: 120, height: 120, marginBottom: 2 }}/>
-            <Button variant="outlined" fullWidth>
-              Upload New Picture
-            </Button>
+            <Avatar src={`../../${userInfo.profile_pic}`} sx={{ width: 120, height: 120, marginBottom: 2 }} />
+            <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} ref={imageInputRef}/>
+            <Button variant="outlined" fullWidth onClick={() => {
+                if (imageInputRef.current) {
+                  imageInputRef.current.click();
+                }
+            }}>Upload new Profile Picture</Button>
           </Grid>
           <Grid item md={8}>
             <Typography variant="h4" gutterBottom>

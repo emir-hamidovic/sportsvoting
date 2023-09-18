@@ -116,7 +116,7 @@ export const CustomersTable = (props: CustomersTableProps) => {
                     </TableCell>
                     <TableCell>
                       <Stack alignItems="center" direction="row" spacing={2}>
-                        <Avatar> {getInitials(customer.name)} </Avatar>
+                        <Avatar src={`../${customer.playerid}.jpg`} alt={getInitials(customer.name)} />
                         <Typography variant="subtitle2"> {customer.name} </Typography>
                       </Stack>
                     </TableCell>

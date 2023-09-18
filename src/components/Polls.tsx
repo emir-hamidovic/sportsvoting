@@ -24,7 +24,7 @@ const Polls = () => {
         {polls.map(poll => (
           <div key={poll['id']} className="poll">
             <div className="poll-image">
-              <img src={poll['image']} alt={poll['name']} />
+              <img src={`${poll['image']}`} alt={poll['name']} />
             </div>
             <div className="poll-details">
               <h2>{poll['name']}</h2>

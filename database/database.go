@@ -39,6 +39,7 @@ type Database interface {
 	GetUserByUsername(username string) *sql.Row
 	GetUserByRefreshToken(refresh_token string) *sql.Row
 	GetUserByID(id int64) *sql.Row
+	GetCurrentProfilePic(id int64) *sql.Row
 	InsertNewUser(username, email, password, refresh_token string, is_admin bool) (sql.Result, error)
 	UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error)
 	UpdateUserIsAdmin(username string, is_admin bool) (sql.Result, error)

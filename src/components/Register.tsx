@@ -68,8 +68,6 @@ const Register = () => {
 
         try {
             const userData = {
-                user,
-                pwd,
                 email
             };
 

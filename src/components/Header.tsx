@@ -30,7 +30,6 @@ function Header() {
     setAnchorEl(null);
   };
 
-  console.log(auth);
   return (
     <header className="header">
       <Link to="/"> <h1 className="underline text-3xl">Sport Voting</h1></Link>
@@ -38,7 +37,7 @@ function Header() {
         {auth?.accessToken ? (
           <div>
             <IconButton aria-controls="profile-menu" aria-haspopup="true" onClick={handleClick}>
-              <Avatar src="https://pbs.twimg.com/media/Fj26barWYAMeoZp?format=jpg&name=4096x4096" alt={auth.user} />
+              <Avatar src={`${auth.user}-${auth.id}.jpg`} alt="default-user.jpg" />
             </IconButton>
             <Menu id="profile-menu" anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
             <MenuItem onClick={editAcc}>Account</MenuItem>

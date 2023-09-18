@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sportsvoting/players"
 	"strconv"
 	"time"
@@ -488,6 +490,67 @@ func updateAdmin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func uploadProfilePicHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10 << 20) // 10 MB limit for file size
+
+	file, _, err := r.FormFile("profileImage")
+
+	if err != nil {
+		http.Error(w, "Unable to parse file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	uploadDir := "public/"
+	fileName := r.MultipartForm.File["profileImage"][0].Filename
+	fmt.Println(fileName)
+	username := r.FormValue("username")
+	fmt.Println(username)
+
+	var u User
+	var profilepic sql.NullString
+	err = db.GetUserByUsername(username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &profilepic, &u.IsAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	u.ProfilePic = profilepic.String
+	if u.ProfilePic != "" {
+		err := os.Remove(uploadDir + u.ProfilePic)
+		if err != nil {
+			http.Error(w, "Error deleting old profile picture", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Create a new file on the server and write the uploaded file to it
+	newFile, err := os.Create(uploadDir + fileName)
+	if err != nil {
+		http.Error(w, "Unable to create file", http.StatusInternalServerError)
+		return
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, file)
+	if err != nil {
+		http.Error(w, "Unable to copy file", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.UpdateUserProfilePic(username, fileName)
+	if err != nil {
+		http.Error(w, "Unable to update profile pic", http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"success":  true,
+		"fileName": fileName,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func getPolls(w http.ResponseWriter, r *http.Request) {

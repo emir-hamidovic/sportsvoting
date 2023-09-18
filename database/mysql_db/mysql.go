@@ -146,6 +146,10 @@ func (m *MySqlDB) GetUserByID(id int64) *sql.Row {
 	return m.db.QueryRow("SELECT username, email, profile_pic, is_admin FROM users WHERE id=?", id)
 }
 
+func (m *MySqlDB) GetCurrentProfilePic(id int64) *sql.Row {
+	return m.db.QueryRow("SELECT profile_pic FROM users WHERE id=?", id)
+}
+
 func (m *MySqlDB) GetUserByRefreshToken(refresh_token string) *sql.Row {
 	return m.db.QueryRow("SELECT username FROM users WHERE refresh_token=?", refresh_token)
 }
