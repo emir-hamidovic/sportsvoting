@@ -50,6 +50,11 @@ func RunUpdate(db database.Database, ctx context.Context) {
 	}
 }
 
+const (
+	UserRoleAdmin string = "admin"
+	UserRoleUser  string = "user"
+)
+
 var db database.Database
 
 func main() {

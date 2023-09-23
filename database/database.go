@@ -39,8 +39,11 @@ type Database interface {
 	GetUserByUsername(username string) *sql.Row
 	GetUserByRefreshToken(refresh_token string) *sql.Row
 	GetUserByID(id int64) *sql.Row
+	GetUserRolesByID(id int64) *sql.Row
+	InsertUserRoles(userid int64, role string) (sql.Result, error)
+	UpdateUserRoles(roles string, user_id int64) (sql.Result, error)
 	GetCurrentProfilePic(id int64) *sql.Row
-	InsertNewUser(username, email, password, refresh_token string, is_admin bool) (sql.Result, error)
+	InsertNewUser(username, email, password, refresh_token string) (sql.Result, error)
 	UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error)
 	UpdateUserIsAdmin(username string, is_admin bool) (sql.Result, error)
 	UpdateUserPassword(username, password string) (sql.Result, error)

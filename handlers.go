@@ -12,6 +12,7 @@ import (
 	"os"
 	"sportsvoting/players"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -34,7 +35,6 @@ type User struct {
 	Password     string `json:"password"`
 	RefreshToken string `json:"refresh_token"`
 	ProfilePic   string `json:"profile_pic"`
-	IsAdmin      string `json:"is_admin"`
 }
 
 const privateKeyAccessPath = "auth.ed"
@@ -119,7 +119,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	var match bool
-	err := db.GetUserByUsername(user).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(user).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("invalid credentials"))
@@ -148,6 +148,12 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var role string
+	err = db.GetUserRolesByID(u.ID).Scan(&role)
+	if err != nil {
+		fmt.Println("error getting user roles", err)
+	}
+
 	_, err = db.UpdateUserRefreshToken(user, refreshToken)
 	if err != nil {
 		fmt.Println("Error updating refresh token for user ", user)
@@ -167,11 +173,13 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	type Response struct {
 		Id          int64  `json:"id"`
 		AccessToken string `json:"access_token"`
+		Role        string `json:"roles"`
 	}
 
 	var res Response
 	res.Id = u.ID
 	res.AccessToken = accessToken
+	res.Role = role
 	jsonRes, err := json.Marshal(res)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -199,12 +207,19 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u User
-	err := db.GetUserByUsername(user).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic, &u.IsAdmin)
+	err := db.GetUserByUsername(user).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic)
 	if err == sql.ErrNoRows {
 		hash, _ := hashPassword(pwd)
-		_, err := db.InsertNewUser(user, register.Email, hash, "", false)
+		res, err := db.InsertNewUser(user, register.Email, hash, "")
 		if err != nil {
 			fmt.Println("error inserting user", err)
+		}
+
+		userid, _ := res.LastInsertId()
+
+		_, err = db.InsertUserRoles(userid, UserRoleUser)
+		if err != nil {
+			fmt.Println("error inserting user roles", err)
 		}
 	} else if err != nil {
 		fmt.Println("error inserting user", err)
@@ -235,7 +250,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 
 	refreshToken := cookie.Value
 	var u User
-	err = db.GetUserByRefreshToken(refreshToken).Scan(&u.Username)
+	err = db.GetUserByRefreshToken(refreshToken).Scan(&u.ID, &u.Username, &u.Email)
 	if err != nil {
 		fmt.Println("can't find user by refresh token", err)
 	} else if u.Username != "" {
@@ -273,7 +288,7 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 
 	refreshToken := cookie.Value
 	var u User
-	err = db.GetUserByRefreshToken(refreshToken).Scan(&u.Username)
+	err = db.GetUserByRefreshToken(refreshToken).Scan(&u.ID, &u.Username, &u.Email)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -296,7 +311,22 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			json.NewEncoder(w).Encode(accessToken)
+			var currentRoles string
+			err = db.GetUserRolesByID(u.ID).Scan(&currentRoles)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			type Response struct {
+				ID          int64  `json:"id"`
+				Username    string `json:"user"`
+				AccessToken string `json:"access_token"`
+				Roles       string `json:"roles"`
+			}
+			resp := Response{ID: u.ID, Username: u.Username, AccessToken: accessToken, Roles: currentRoles}
+
+			json.NewEncoder(w).Encode(resp)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
@@ -315,7 +345,7 @@ func handleUserList(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &user.ProfilePic, &user.IsAdmin); err != nil {
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &user.ProfilePic); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -340,7 +370,7 @@ func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	var profilepic sql.NullString
-	err = db.GetUserByID(id).Scan(&u.Username, &u.Email, &profilepic, &u.IsAdmin)
+	err = db.GetUserByID(id).Scan(&u.Username, &u.Email, &profilepic)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -391,7 +421,7 @@ func updateUserEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedEmail := u.Email
-	err := db.GetUserByUsername(u.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &sql.NullString{}, &u.IsAdmin)
+	err := db.GetUserByUsername(u.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &sql.NullString{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -437,7 +467,7 @@ func updatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u User
-	err := db.GetUserByUsername(newPasswords.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &sql.NullString{}, &u.IsAdmin)
+	err := db.GetUserByUsername(newPasswords.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &sql.NullString{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -470,26 +500,29 @@ func updateAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var u User
-	err := db.GetUserByID(id).Scan(&u.Username, &u.Email, &u.ProfilePic, &u.IsAdmin)
+	var currentRoles string
+	err := db.GetUserRolesByID(id).Scan(&currentRoles)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	isAdmin, err := strconv.ParseBool(u.IsAdmin)
+	var newRoles string
+	// just reverse whether it is already an admin or not
+	if strings.Contains(currentRoles, "admin") {
+		newRoles = UserRoleUser
+	} else {
+		newRoles = fmt.Sprintf("%s,%s", UserRoleUser, UserRoleAdmin)
+	}
+
+	_, err = db.UpdateUserRoles(newRoles, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = db.UpdateUserIsAdmin(u.Username, !isAdmin)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(newRoles)
 }
 
 func uploadProfilePicHandler(w http.ResponseWriter, r *http.Request) {
@@ -510,7 +543,7 @@ func uploadProfilePicHandler(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	var profilepic sql.NullString
-	err = db.GetUserByUsername(username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &profilepic, &u.IsAdmin)
+	err = db.GetUserByUsername(username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &profilepic)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

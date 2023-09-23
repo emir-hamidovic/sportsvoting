@@ -5,7 +5,6 @@ interface PieChartProps {
   data: { value: number; name: string, pollname: string}[];
 }
 
-// uzeti prvih 5 i staviti ih u pie chart, a dole ispod staviti ime igraca i osnovne info i sve za koje je glasano staviti total votes i to je to za pocetak
 const PieChart: React.FC<PieChartProps> = ({ data }) => {
   const chartContainer = useRef<HTMLDivElement | null>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);

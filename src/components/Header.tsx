@@ -10,7 +10,7 @@ function Header() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const logout = useLogout();
-
+console.log(auth);
   const signOut = async () => {
     await logout();
     handleClose();
@@ -37,7 +37,7 @@ function Header() {
         {auth?.accessToken ? (
           <div>
             <IconButton aria-controls="profile-menu" aria-haspopup="true" onClick={handleClick}>
-              <Avatar src={`${auth.user}-${auth.id}.jpg`} alt="default-user.jpg" />
+              <Avatar src={`${window.location.origin}/${auth.user}-${auth.id}.jpg`} alt="default-user.jpg" />
             </IconButton>
             <Menu id="profile-menu" anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
             <MenuItem onClick={editAcc}>Account</MenuItem>

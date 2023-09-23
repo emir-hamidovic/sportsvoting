@@ -139,11 +139,23 @@ func (m *MySqlDB) GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows
 }
 
 func (m *MySqlDB) GetUserByUsername(username string) *sql.Row {
-	return m.db.QueryRow("SELECT id, username, email, password, refresh_token, profile_pic, is_admin FROM users WHERE username=?", username)
+	return m.db.QueryRow("SELECT id, username, email, password, refresh_token, profile_pic FROM users WHERE username=?", username)
 }
 
 func (m *MySqlDB) GetUserByID(id int64) *sql.Row {
-	return m.db.QueryRow("SELECT username, email, profile_pic, is_admin FROM users WHERE id=?", id)
+	return m.db.QueryRow("SELECT username, email, profile_pic FROM users WHERE id=?", id)
+}
+
+func (m *MySqlDB) GetUserRolesByID(id int64) *sql.Row {
+	return m.db.QueryRow("SELECT role FROM user_roles WHERE user_id=?", id)
+}
+
+func (m *MySqlDB) InsertUserRoles(userid int64, roles string) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO user_roles (user_id, role) VALUES (?, ?)", userid, roles)
+}
+
+func (m *MySqlDB) UpdateUserRoles(roles string, user_id int64) (sql.Result, error) {
+	return m.db.Exec("UPDATE user_roles SET role=? WHERE user_id=?", roles, user_id)
 }
 
 func (m *MySqlDB) GetCurrentProfilePic(id int64) *sql.Row {
@@ -151,11 +163,11 @@ func (m *MySqlDB) GetCurrentProfilePic(id int64) *sql.Row {
 }
 
 func (m *MySqlDB) GetUserByRefreshToken(refresh_token string) *sql.Row {
-	return m.db.QueryRow("SELECT username FROM users WHERE refresh_token=?", refresh_token)
+	return m.db.QueryRow("SELECT id, username, email FROM users WHERE refresh_token=?", refresh_token)
 }
 
-func (m *MySqlDB) InsertNewUser(username, email, password, refresh_token string, is_admin bool) (sql.Result, error) {
-	return m.db.Exec("INSERT INTO users(username, email, password, refresh_token, is_admin) VALUES (?, ?, ?, ?, ?)", username, email, password, refresh_token, is_admin)
+func (m *MySqlDB) InsertNewUser(username, email, password, refresh_token string) (sql.Result, error) {
+	return m.db.Exec("INSERT INTO users(username, email, password, refresh_token) VALUES (?, ?, ?, ?)", username, email, password, refresh_token)
 }
 
 func (m *MySqlDB) UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error) {
@@ -187,5 +199,5 @@ func (m *MySqlDB) DeleteUser(id int64) (sql.Result, error) {
 }
 
 func (m *MySqlDB) GetAllUsers() (*sql.Rows, error) {
-	return m.db.Query("SELECT id, username, email, password, refresh_token, profile_pic, is_admin FROM users")
+	return m.db.Query("SELECT id, username, email, password, refresh_token, profile_pic FROM users")
 }

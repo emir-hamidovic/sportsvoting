@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState, useCallback, useEffect } from "react";
-import ChartPie from "./ChartPie";
 import { useParams } from "react-router-dom";
+import PieChart from "./ChartPie";
 
 interface Votes {
     value: number,
@@ -15,7 +15,11 @@ const Results = () => {
     const fetchData = useCallback(async () => {
         try {
             const response = await axios.get<Votes[]>(`http://localhost:8080/playervotes/${pollId}`);
-            setData(response.data);
+            if (response.data === null) {
+                setData([])
+            } else {
+                setData(response.data);
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
         }
@@ -32,7 +36,7 @@ const Results = () => {
 
     return (
     <div>
-        <ChartPie data={data}/>
+        <PieChart data={data}/>
     </div>
     )
 }

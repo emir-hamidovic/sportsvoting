@@ -18,6 +18,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import AdminIcon from '@mui/icons-material/SupervisorAccount';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import useAuth from '../hooks/use-auth';
 
 type User = {
   id: number;
@@ -26,11 +27,11 @@ type User = {
   password: string;
   refresh_token: string;
   profile_pic: string;
-  is_admin: boolean;
 };
 
 const UserListPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const { auth, setAuth } = useAuth();
 
   useEffect(() => {
     fetchUsers();
@@ -57,16 +58,22 @@ const UserListPage: React.FC = () => {
       });
   };
 
-  const changeAdmin = (id: number) => {
-    axios.post('http://localhost:8080/api/update-admin', id)
-      .then(() => {
-        fetchUsers();
-      })
-      .catch(error => {
-        console.error('Error changing admin:', error);
+  const changeAdmin = async (id: number) => {
+    try{
+      const response = await axios.post('http://localhost:8080/api/update-admin', {id: id} );
+      if (response.data) {
+        setAuth(prev => {
+          return {
+              ...prev,
+              roles: response.data.split(",")
+          }
       });
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error('Error changing admin:', error);
+    }
   };
-
 
   return (
     <Container maxWidth="md">
@@ -94,11 +101,13 @@ const UserListPage: React.FC = () => {
                     </IconButton>
                   </Link>
                   <IconButton edge="end" aria-label="admin" onClick={() => changeAdmin(user.id)}>
-                    <AdminIcon color={user.is_admin ? 'primary' : 'inherit'} />
+                    <AdminIcon color={auth.roles.includes("admin") ? 'primary' : 'secondary'} />
                   </IconButton>
+                  {user.id !== auth.id && (
                   <IconButton edge="end" aria-label="delete" onClick={() => deleteUser(user.id)}>
                     <DeleteIcon />
                   </IconButton>
+                  )}
                 </Box>
               </ListItemSecondaryAction>
             </ListItem>
