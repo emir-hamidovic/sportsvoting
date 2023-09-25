@@ -12,6 +12,7 @@ import { AuthProvider } from './context/AuthProvider';
 import RequireAuth from './components/RequireAuth';
 import PersistLogin from './components/PersistLogin';
 import Unauthorized from './components/Unauthorized';
+import AdminUserCreationForm from './components/AdminUserCreationForm';
 
 function App() {
   return (
@@ -40,6 +41,10 @@ function App() {
 
           <Route element={<RequireAuth allowedRoles={["admin"]}/>}>
             <Route path="/admin/users" element={<UserListPage />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={["admin"]}/>}>
+            <Route path="/admin/create-user" element={<AdminUserCreationForm />} />
           </Route>
           <Route path="/" element={<HomePage />} />
         </Route>

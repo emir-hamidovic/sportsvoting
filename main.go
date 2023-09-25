@@ -97,6 +97,7 @@ func main() {
 	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
 	r.HandleFunc("/login", handleLogin).Methods("POST")
 	r.HandleFunc("/register", handleRegister).Methods("POST")
+	r.HandleFunc("/admin/createuser", createUserAdmin).Methods("POST")
 	r.HandleFunc("/logout", handleLogout)
 	r.HandleFunc("/refresh", handleRefresh)
 	r.HandleFunc("/users/get", handleUserList)

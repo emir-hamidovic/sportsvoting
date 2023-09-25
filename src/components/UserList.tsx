@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Avatar,
   Box,
@@ -32,6 +33,7 @@ type User = {
 const UserListPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const { auth, setAuth } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -114,7 +116,7 @@ const UserListPage: React.FC = () => {
           ))}
         </List>
         <Box textAlign="center" mt={1}>
-            <Button variant="contained" color="primary">
+            <Button variant="contained" color="primary" onClick={() => navigate("/admin/create-user")}>
             Create New User
             </Button>
         </Box>

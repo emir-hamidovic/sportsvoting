@@ -235,6 +235,41 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Register successful"))
 }
 
+func createUserAdmin(w http.ResponseWriter, r *http.Request) {
+	var reqUser User
+	if err := json.NewDecoder(r.Body).Decode(&reqUser); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var u User
+	err := db.GetUserByUsername(reqUser.Username).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.RefreshToken, &u.ProfilePic)
+	if err == sql.ErrNoRows {
+		hash, _ := hashPassword(reqUser.Password)
+		res, err := db.InsertNewUser(reqUser.Username, reqUser.Email, hash, "")
+		if err != nil {
+			fmt.Println("error inserting user", err)
+		}
+
+		userid, _ := res.LastInsertId()
+		_, err = db.InsertUserRoles(userid, UserRoleUser)
+		if err != nil {
+			fmt.Println("error inserting user roles", err)
+		}
+	} else if err != nil {
+		fmt.Println("error inserting user", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if u.Username != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("user already exists"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User created successfully"))
+}
+
 func handleLogout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
@@ -811,6 +846,7 @@ func teamVotes(w http.ResponseWriter, r *http.Request) {}
 type VotePayload struct {
 	PlayerID string `json:"playerid"`
 	PollID   int64  `json:"pollid"`
+	UserID   int64  `json:"userid"`
 }
 
 func insertPlayerVotes(w http.ResponseWriter, r *http.Request) {
@@ -823,7 +859,7 @@ func insertPlayerVotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.InsertPlayerVotes(payload.PollID, payload.PlayerID)
+	_, err = db.InsertPlayerVotes(payload.PollID, payload.UserID, payload.PlayerID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

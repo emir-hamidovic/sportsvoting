@@ -1,7 +1,9 @@
-import {Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography, Button} from '@mui/material';
+import {Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography, Button, Snackbar} from '@mui/material';
 import { FlattenedAPIResponse } from '../utils/api-response';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import useAuth from '../hooks/use-auth';
+import { useState } from 'react';
 
 
 interface CustomersTableProps {
@@ -65,21 +67,31 @@ export const CustomersTable = (props: CustomersTableProps) => {
   const tableFields = columns.slice(2);
   const { pollId } = useParams();
   const id = pollId ? parseInt(pollId, 10) : undefined;
+  const {auth} = useAuth();
+
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleCloseSnackbar = () => {
+    setSuccessMessage('');
+    setErrorMessage('');
+  };
 
   const handleVote = () => {
     const selectedCustomerIds = selected.length === 1 ? selected[0] : '';
 
     const voteEndpoint = 'http://localhost:8080/playervotes/';
-    const payload = { playerid: selectedCustomerIds, pollid: Number(id) };
+    const payload = { playerid: selectedCustomerIds, pollid: Number(id), userid: auth.id };
     axios.post(voteEndpoint, payload, {
       headers: {
         'Content-Type': 'application/json',
       },
     })
       .then((response) => {
-        console.log(response.data);
+        setSuccessMessage('Vote updated successfully!');
       })
       .catch((error) => {
+        setErrorMessage('An error occurred. Please try again later.');
         console.error(error);
       });
   };
@@ -151,6 +163,21 @@ export const CustomersTable = (props: CustomersTableProps) => {
           Vote
         </Button>
       </Box>
+      <Snackbar
+        open={Boolean(successMessage)}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        message={successMessage}
+        sx={{ bottom: 100 }}
+      />
+
+      <Snackbar
+        open={Boolean(errorMessage)}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        message={errorMessage}
+        sx={{ bottom: 100 }}
+      />
     </Card>
   );
 };

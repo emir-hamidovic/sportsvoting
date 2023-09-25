@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import useAuth from '../hooks/use-auth';
 
 const Polls = () => {
   const navigate = useNavigate();
+  const {auth} = useAuth();
   const [polls, setPolls] = useState([]);
   const fetchData = useCallback(async () => {
     try {
@@ -31,7 +33,10 @@ const Polls = () => {
               <p>{poll['description']}</p>
             </div>
             <div className="poll-actions">
-              <button className="vote-button" onClick={() => navigate(`/${poll['endpoint']}/${poll['id']}`)}>Vote</button>
+              {auth.user ? 
+              <button className="vote-button" onClick={() => navigate(`/${poll['endpoint']}/${poll['id']}`)}>Vote</button> : 
+              ''
+              }
               <button className="results-button" onClick={() => navigate(`/results/${poll['id']}`)}>Check Results</button>
             </div>
           </div>

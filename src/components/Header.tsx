@@ -10,7 +10,7 @@ function Header() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const logout = useLogout();
-console.log(auth);
+
   const signOut = async () => {
     await logout();
     handleClose();
@@ -20,6 +20,11 @@ console.log(auth);
   const editAcc = () => {
     handleClose();
     navigate(`/edit-user/${auth?.id}`)
+  }
+
+  const userList = () => {
+    handleClose();
+    navigate(`/admin/users`)
   }
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -41,6 +46,9 @@ console.log(auth);
             </IconButton>
             <Menu id="profile-menu" anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
             <MenuItem onClick={editAcc}>Account</MenuItem>
+            { auth.roles.includes("admin") ?
+              <MenuItem onClick={userList}>Users</MenuItem> : ''
+            }
             <MenuItem onClick={signOut}>Sign out</MenuItem>
           </Menu>
         </div>
