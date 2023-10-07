@@ -31,10 +31,11 @@ const Polls = () => {
             <div className="poll-details">
               <h2>{poll['name']}</h2>
               <p>{poll['description']}</p>
+              <p>Season: {poll['season']}</p>
             </div>
             <div className="poll-actions">
               {auth.user ? 
-              <button className="vote-button" onClick={() => navigate(`/${poll['endpoint']}/${poll['id']}`)}>Vote</button> : 
+              <button className="vote-button" onClick={() => navigate(`/quiz/${poll['id']}`)}>Vote</button> : 
               ''
               }
               <button className="results-button" onClick={() => navigate(`/results/${poll['id']}`)}>Check Results</button>

@@ -249,7 +249,7 @@ func GetEndYearOfTheSeason() string {
 	year := today.Year()
 	month := int(today.Month())
 	var currentSeason string
-	if month < 10 {
+	if month < 11 {
 		currentSeason = fmt.Sprint(year)
 	} else {
 		currentSeason = fmt.Sprint(year + 1)

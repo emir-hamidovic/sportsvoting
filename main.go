@@ -75,23 +75,19 @@ func main() {
 	}*/
 
 	polls := []Poll{
-		{1, "MVP", "Description for MVP", "mvp-trophy.jpg", "mvp"},
-		{2, "ROY", "Description for ROY", "roy-trophy.jpeg", "roy"},
-		{3, "DPOY", "Description for DPOY", "dpoy-trophy.jpeg", "dpoy"},
-		{4, "Sixth Man", "Description for 6-man", "6moy-trophy.jpeg", "sixthman"},
+		{1, "MVP", "Description for MVP", "mvp-trophy.jpg", "All stats", "2023"},
+		{2, "ROY", "Description for ROY", "roy-trophy.jpeg", "Rookie", "2023"},
+		{3, "DPOY", "Description for DPOY", "dpoy-trophy.jpeg", "Defensive", "2023"},
+		{4, "Sixth Man", "Description for 6-man", "6moy-trophy.jpeg", "Sixth man", "2023"},
 	}
 
 	for _, val := range polls {
-		db.InsertPolls(val.ID, val.Name, val.Description, val.Image, val.Endpoint)
+		db.InsertPollsWithId(val.ID, val.Name, val.Description, val.Image, val.SelectedStats, val.Season)
 	}
 
 	r := mux.NewRouter()
 	r.HandleFunc("/getpolls", getPolls)
-	r.HandleFunc("/sixthman", sixManAward)
-	r.HandleFunc("/dpoy", dpoyAward)
-	r.HandleFunc("/mvp", mvpAward)
-	r.HandleFunc("/mip", mipAward)
-	r.HandleFunc("/roy", royAward)
+	r.HandleFunc("/quiz/{pollid:[0-9]+}", GetQuiz)
 	r.HandleFunc("/teamvotes/{id:[0-9]+}", teamVotes)
 	r.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")
 	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
@@ -108,6 +104,7 @@ func main() {
 	r.HandleFunc("/api/update-password", updatePassword).Methods("POST")
 	r.HandleFunc("/api/update-admin", updateAdmin).Methods("POST")
 	r.HandleFunc("/api/upload-profile-pic", uploadProfilePicHandler).Methods("POST")
+	r.HandleFunc("/api/create-quiz", createQuiz).Methods("POST")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost/"},

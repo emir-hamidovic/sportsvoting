@@ -95,8 +95,15 @@ func (m *MySqlDB) SelectTeamByAbbrevation(teamabbr string) *sql.Row {
 	return m.db.QueryRow("SELECT teamabbr from teams where teamabbr=?", teamabbr)
 }
 
-func (m *MySqlDB) GetMVPStats(ctx context.Context, season string) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT players.playerid, name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg FROM players INNER JOIN stats ON players.playerid=stats.playerid INNER JOIN advancedstats ON players.playerid=advancedstats.playerid WHERE advancedstats.season=? AND stats.season=? AND minutespergame > 20 ORDER BY per DESC", season, season)
+func (m *MySqlDB) GetPlayerStatsForQuiz(ctx context.Context, season string) (*sql.Rows, error) {
+	query := `
+        SELECT players.playerid, name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg
+        FROM players
+        INNER JOIN stats ON players.playerid = stats.playerid
+        INNER JOIN advancedstats ON players.playerid = advancedstats.playerid
+        WHERE advancedstats.season = ? AND stats.season = ? AND minutespergame > 20
+        ORDER BY per DESC`
+	return m.db.QueryContext(ctx, query, season, season)
 }
 
 func (m *MySqlDB) GetDPOYStats(ctx context.Context, season string) (*sql.Rows, error) {
@@ -112,11 +119,19 @@ func (m *MySqlDB) GetROYStats(ctx context.Context, season string) (*sql.Rows, er
 }
 
 func (m *MySqlDB) GetPolls(ctx context.Context) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT id, name, description, image, endpoint FROM polls")
+	return m.db.QueryContext(ctx, "SELECT id, name, description, image, selected_stats, season FROM polls")
 }
 
-func (m *MySqlDB) InsertPolls(id int64, name, description, image, endpoint string) (sql.Result, error) {
-	return m.db.Exec("INSERT IGNORE INTO polls(id, name, description, image, endpoint) VALUES (?, ?, ?, ?, ?)", id, name, description, image, endpoint)
+func (m *MySqlDB) GetPollByID(id int64) *sql.Row {
+	return m.db.QueryRow("SELECT name, description, image, selected_stats, season FROM polls WHERE id=?", id)
+}
+
+func (m *MySqlDB) InsertPolls(name, description, image, selected_stats, season string) (sql.Result, error) {
+	return m.db.Exec("INSERT IGNORE INTO polls(name, description, image, selected_stats, season) VALUES (?, ?, ?, ?, ?)", name, description, image, selected_stats, season)
+}
+
+func (m *MySqlDB) InsertPollsWithId(id int64, name, description, image, selected_stats, season string) (sql.Result, error) {
+	return m.db.Exec("INSERT IGNORE INTO polls(id, name, description, image, selected_stats, season) VALUES (?, ?, ?, ?, ?, ?)", id, name, description, image, selected_stats, season)
 }
 
 func (m *MySqlDB) GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {

@@ -21,11 +21,12 @@ import (
 )
 
 type Poll struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	Endpoint    string `json:"endpoint"`
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Image         string `json:"image"`
+	SelectedStats string `json:"selected_stats"`
+	Season        string `json:"season"`
 }
 
 type User struct {
@@ -420,6 +421,16 @@ func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getPollByID(id int64) (Poll, error) {
+	var poll Poll
+	err := db.GetPollByID(id).Scan(&poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season)
+	if err != nil {
+		return Poll{}, err
+	}
+
+	return poll, nil
+}
+
 func handleUserDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -560,11 +571,52 @@ func updateAdmin(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newRoles)
 }
 
+func createQuiz(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10 << 20) // 10 MB limit for file size
+	var poll Poll
+	poll.Name = r.FormValue("name")
+	poll.Description = r.FormValue("description")
+	poll.Season = r.FormValue("season")
+	poll.SelectedStats = r.FormValue("selectedStats")
+	image, _, err := r.FormFile("photo")
+	if err != nil {
+		http.Error(w, "Unable to parse file", http.StatusBadRequest)
+		return
+	}
+	defer image.Close()
+
+	uploadDir := "public/"
+	poll.Image = r.MultipartForm.File["photo"][0].Filename
+
+	newFile, err := os.Create(uploadDir + poll.Image)
+	if err != nil {
+		http.Error(w, "Unable to create file", http.StatusInternalServerError)
+		return
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, image)
+	if err != nil {
+		http.Error(w, "Unable to copy file", http.StatusInternalServerError)
+		return
+	}
+
+	insertRes, err := db.InsertPolls(poll.Name, poll.Description, poll.Image, poll.SelectedStats, poll.Season)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	insertID, _ := insertRes.LastInsertId()
+	response := fmt.Sprintf("Created quiz with ID: %d", insertID)
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(response))
+}
+
 func uploadProfilePicHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20) // 10 MB limit for file size
 
 	file, _, err := r.FormFile("profileImage")
-
 	if err != nil {
 		http.Error(w, "Unable to parse file", http.StatusBadRequest)
 		return
@@ -636,7 +688,7 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var poll Poll
-		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.Endpoint)
+		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -655,16 +707,122 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 	w.Write(pollsJSON)
 }
 
-func dpoyAward(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
+func GetQuiz(w http.ResponseWriter, r *http.Request) {
+	pollId := mux.Vars(r)["pollid"]
+	id, err := strconv.ParseInt(pollId, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	rows, err := db.GetDPOYStats(ctx, players.GetEndYearOfTheSeason())
+	poll, err := getPollByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	var players []players.Player
+	switch poll.SelectedStats {
+	case "Defensive":
+		players, err = getDefensiveStats(ctx, poll.Season)
+	case "Sixth man":
+		players, err = getSixmanStats(ctx, poll.Season)
+	case "Rookie":
+		players, err = getRookieStats(ctx, poll.Season)
+	case "All stats":
+		players, err = getAllStats(ctx, poll.Season)
+	default:
+		players, err = getAllStats(ctx, poll.Season)
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Security-Policy", "default-src 'self'")
+	json.NewEncoder(w).Encode(players)
+}
+
+func getRookieStats(ctx context.Context, season string) ([]players.Player, error) {
+	rows, err := db.GetROYStats(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var playerList []players.Player
+
+	for rows.Next() {
+		var p players.Player
+		err = rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.WS, &p.BPM, &p.OffRtg, &p.DefRtg)
+		if err != nil {
+			return nil, err
+		}
+		playerList = append(playerList, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return playerList, nil
+}
+
+func getAllStats(ctx context.Context, season string) ([]players.Player, error) {
+	rows, err := db.GetPlayerStatsForQuiz(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var playerList []players.Player
+
+	for rows.Next() {
+		var p players.Player
+		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
+		if err != nil {
+			return nil, err
+		}
+		playerList = append(playerList, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return playerList, nil
+}
+
+func getSixmanStats(ctx context.Context, season string) ([]players.Player, error) {
+	rows, err := db.GetSixManStats(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var playerList []players.Player
+
+	for rows.Next() {
+		var p players.Player
+		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
+		if err != nil {
+			return nil, err
+		}
+		playerList = append(playerList, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return playerList, nil
+}
+
+func getDefensiveStats(ctx context.Context, season string) ([]players.Player, error) {
+	rows, err := db.GetDPOYStats(ctx, season)
+	if err != nil {
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -673,126 +831,16 @@ func dpoyAward(w http.ResponseWriter, r *http.Request) {
 		var p players.Player
 		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Rebounds, &p.Steals, &p.Blocks, &p.Position, &p.DefWS, &p.DefBPM, &p.DefRtg)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 		playerList = append(playerList, p)
 	}
 
 	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Security-Policy", "default-src 'self'")
-	json.NewEncoder(w).Encode(playerList)
-}
-
-func mipAward(w http.ResponseWriter, r *http.Request) {
-	mvpAward(w, r)
-}
-
-func royAward(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
-
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-
-	rows, err := db.GetROYStats(ctx, players.GetEndYearOfTheSeason())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
-	var playerList []players.Player
-	for rows.Next() {
-		var p players.Player
-		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.WS, &p.BPM, &p.OffRtg, &p.DefRtg)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		playerList = append(playerList, p)
-	}
-
-	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Security-Policy", "default-src 'self'")
-	json.NewEncoder(w).Encode(playerList)
-}
-
-func sixManAward(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
-
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-
-	rows, err := db.GetSixManStats(ctx, players.GetEndYearOfTheSeason())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
-	var playerList []players.Player
-	for rows.Next() {
-		var p players.Player
-		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		playerList = append(playerList, p)
-	}
-
-	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Security-Policy", "default-src 'self'")
-	json.NewEncoder(w).Encode(playerList)
-}
-
-func mvpAward(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
-
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-
-	rows, err := db.GetMVPStats(ctx, players.GetEndYearOfTheSeason())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
-	var playerList []players.Player
-	for rows.Next() {
-		var p players.Player
-		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		playerList = append(playerList, p)
-	}
-
-	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Security-Policy", "default-src 'self'")
-	json.NewEncoder(w).Encode(playerList)
+	return playerList, nil
 }
 
 type Votes struct {

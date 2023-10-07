@@ -3,6 +3,7 @@ import axios from 'axios';
 import { CustomersTable } from './CustomersTable';
 import { useSelection } from '../hooks/use-selection';
 import { APIResponse, FlattenedAPIResponse, flattenObject, useCustomerIds, useCustomers } from '../utils/api-response';
+import { useParams } from 'react-router-dom';
 
 interface TableDataProps {
   endpoint: string;
@@ -11,6 +12,7 @@ interface TableDataProps {
 export default function TableData ({ endpoint }: TableDataProps) {
   const [data, setData] = useState<FlattenedAPIResponse[]>([]);
   const [page, setPage] = useState<number>(0);
+  const { pollId } = useParams();
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
   const customers = useCustomers(data, page, rowsPerPage);
   const customersIds = useCustomerIds(customers);
@@ -33,7 +35,7 @@ export default function TableData ({ endpoint }: TableDataProps) {
 
   const fetchData = useCallback(async (endpoint: string) => {
     try {
-      const response = await axios.get<APIResponse[]>(endpoint);
+      const response = await axios.get<APIResponse[]>(endpoint + "/" + pollId);
       const transformedData: FlattenedAPIResponse[] = response.data.map((item) => ({
         playerid: item.playerid,
         name: item.name,

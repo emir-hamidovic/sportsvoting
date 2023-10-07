@@ -13,6 +13,7 @@ import RequireAuth from './components/RequireAuth';
 import PersistLogin from './components/PersistLogin';
 import Unauthorized from './components/Unauthorized';
 import AdminUserCreationForm from './components/AdminUserCreationForm';
+import QuizCreationPage from './components/QuizCreationPage';
 
 function App() {
   return (
@@ -25,11 +26,9 @@ function App() {
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         <Route element={<PersistLogin />}>
-          <Route path="/mvp/:pollId" element={<TableData endpoint='http://localhost:8080/mvp'/>} />
-          <Route path="/sixthman/:pollId" element={<TableData endpoint='http://localhost:8080/sixthman' />} />
-          <Route path="/roy/:pollId" element={<TableData endpoint='http://localhost:8080/roy' />} />
-          <Route path="/dpoy/:pollId" element={<TableData endpoint='http://localhost:8080/dpoy' />} />
+          <Route path="/quiz/:pollId" element={<TableData endpoint='http://localhost:8080/quiz'/>} />
           <Route path="/results/:pollId" element={<Results />} />
+          <Route path="/create-quiz" element={<QuizCreationPage />} />
 
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
             <Route path="/edit-user/:userId" element={<AccountEditPage />} />
