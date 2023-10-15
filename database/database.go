@@ -12,6 +12,8 @@ const (
 )
 
 type Database interface {
+	InsertSeasonEntered(season string) (sql.Result, error)
+	SelectSeasonsAvailable() (*sql.Rows, error)
 	InsertPlayer(playerid, name, college, teamabbr, height, weight string, age int64) (sql.Result, error)
 	UpdatePlayerAge(playerid string, age int64) (sql.Result, error)
 	InsertTeam(teamabbr, name, logo string, winlosspct float64, playoffs, divtitles, conftitles, championships int64) (sql.Result, error)

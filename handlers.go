@@ -695,7 +695,6 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 		polls = append(polls, poll)
 	}
 
-	// Convert the polls slice to JSON
 	pollsJSON, err := json.Marshal(polls)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -705,6 +704,36 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	w.Write(pollsJSON)
+}
+
+func getSeasons(w http.ResponseWriter, r *http.Request) {
+	var seasons []string
+
+	rows, err := db.SelectSeasonsAvailable()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var season string
+		err := rows.Scan(&season)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		seasons = append(seasons, season)
+	}
+
+	seasonsJson, err := json.Marshal(seasons)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(seasonsJson)
 }
 
 func GetQuiz(w http.ResponseWriter, r *http.Request) {

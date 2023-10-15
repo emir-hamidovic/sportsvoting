@@ -24,7 +24,7 @@ type Teams struct {
 	Championships    int64
 }
 
-func ParseTeams(db database.Database) (map[string]players.Player, error) {
+func ParseTeams(db database.Database, season string) (map[string]players.Player, error) {
 	allTeams, err := ParseBasicInfoForEveryTeam()
 	if err != nil {
 		return nil, err
@@ -32,13 +32,13 @@ func ParseTeams(db database.Database) (map[string]players.Player, error) {
 
 	roster := make(map[string]players.Player, 600)
 	for _, team := range allTeams {
-		url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s/%s.html", team.TeamAbbr, players.GetEndYearOfTheSeason())
+		url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s/%s.html", team.TeamAbbr, season)
 		doc, err := request.GetDocumentFromURL(url)
 		if err != nil {
 			return nil, err
 		}
 
-		roster, err = players.GetPlayerInfo(doc, team.TeamAbbr, roster)
+		roster, err = players.GetPlayerInfo(doc, team.TeamAbbr, roster, season)
 		if err != nil {
 			return nil, err
 		}

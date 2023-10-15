@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import {
   Button,
@@ -18,10 +18,24 @@ import {
 const QuizCreationPage: React.FC = () => {
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [season, setSeason] = useState<string>(''); // State for selected season
+  const [season, setSeason] = useState<string>('');
   const [selectedStats, setSelectedStats] = useState<string>('');
   const [statsOptions] = useState<string[]>(["All stats", "Defensive", "Sixth man", "Rookie"]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null); // State for selected photo
+  const [seasonOptions, setSeasonOptions] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/getseasons');
+      setSeasonOptions(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
@@ -106,9 +120,11 @@ const QuizCreationPage: React.FC = () => {
                   onChange={handleSeasonChange}
                   label="Season"
                 >
-                  <MenuItem value="2022">2022</MenuItem>
-                  <MenuItem value="2023">2023</MenuItem>
-                  {/* Add more seasons as needed */}
+                 {seasonOptions.map((stat) => (
+                <MenuItem key={stat} value={stat}>
+                  {stat}
+                </MenuItem>
+              ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -121,7 +137,7 @@ const QuizCreationPage: React.FC = () => {
               />
             </Grid>
             <Grid item md={12}>
-  <div className="label">Select stats type:</div>
+  <div className="label">Select stats type to display:</div>
   <FormControl fullWidth variant="standard">
     <Select
       value={selectedStats}

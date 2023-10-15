@@ -14,20 +14,30 @@ import (
 	"github.com/rs/cors"
 )
 
-func InsertTeamAndPlayerInfo(db database.Database) (map[string]players.Player, error) {
+func InsertTeamAndPlayerInfo(db database.Database, season string) error {
 	fmt.Println("Parsing teams")
-	playerList, err := teams.ParseTeams(db)
+	playerList, err := teams.ParseTeams(db, season)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	fmt.Println("Inserting players")
 	err = players.InsertPlayers(db, playerList)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return playerList, err
+	err = players.UpdatePlayerStats(db, playerList, season)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.InsertSeasonEntered(season)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func RunUpdate(db database.Database, ctx context.Context) {
@@ -64,15 +74,30 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/*rosters, err := InsertTeamAndPlayerInfo(db)
+	err = InsertTeamAndPlayerInfo(db, players.GetEndYearOfTheSeason())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = players.UpdatePlayerStats(db, rosters)
-	if err != nil {
-		log.Fatal(err)
-	}*/
+	// Schedule the function to run on the next 1st of November
+	go func() {
+		currentDate := time.Now()
+		// Calculate the next 1st of November
+		nextNovember1st := time.Date(currentDate.Year(), time.November, 1, 0, 0, 0, 0, currentDate.Location())
+
+		for {
+			// If the current date is past the next 1st of November, add one year
+			if currentDate.After(nextNovember1st) {
+				nextNovember1st = nextNovember1st.AddDate(1, 0, 0)
+			}
+			durationUntilNextNovember := time.Until(nextNovember1st)
+			<-time.After(durationUntilNextNovember)
+			err := InsertTeamAndPlayerInfo(db, players.GetEndYearOfTheSeason())
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}()
 
 	polls := []Poll{
 		{1, "MVP", "Description for MVP", "mvp-trophy.jpg", "All stats", "2023"},
@@ -87,6 +112,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/getpolls", getPolls)
+	r.HandleFunc("/getseasons", getSeasons)
 	r.HandleFunc("/quiz/{pollid:[0-9]+}", GetQuiz)
 	r.HandleFunc("/teamvotes/{id:[0-9]+}", teamVotes)
 	r.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")

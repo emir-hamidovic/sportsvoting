@@ -35,8 +35,16 @@ func NewDB(dbname string, addr string) (*MySqlDB, error) {
 	return &MySqlDB{db: db}, nil
 }
 
+func (m *MySqlDB) InsertSeasonEntered(season string) (sql.Result, error) {
+	return m.db.Exec("INSERT IGNORE INTO seasons_entered(season) VALUES (?)", season)
+}
+
+func (m *MySqlDB) SelectSeasonsAvailable() (*sql.Rows, error) {
+	return m.db.Query("SELECT season FROM seasons_entered")
+}
+
 func (m *MySqlDB) InsertPlayer(playerid, name, college, teamabbr, height, weight string, age int64) (sql.Result, error) {
-	return m.db.Exec("INSERT INTO players(playerid, name, college, teamabbr, height, weight, age) VALUES (?, ?, ?, ?, ?, ?, ?)", playerid, name, college, teamabbr, height, weight, age)
+	return m.db.Exec("INSERT IGNORE INTO players(playerid, name, college, teamabbr, height, weight, age) VALUES (?, ?, ?, ?, ?, ?, ?)", playerid, name, college, teamabbr, height, weight, age)
 }
 
 func (m *MySqlDB) UpdatePlayerAge(playerid string, age int64) (sql.Result, error) {
@@ -44,7 +52,7 @@ func (m *MySqlDB) UpdatePlayerAge(playerid string, age int64) (sql.Result, error
 }
 
 func (m *MySqlDB) InsertTeam(teamabbr, name, logo string, winlosspct float64, playoffs, divtitles, conftitles, championships int64) (sql.Result, error) {
-	return m.db.Exec("INSERT INTO teams(teamabbr, name, logo, winlosspct, playoffs, divisiontitles, conferencetitles, championships) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", teamabbr, name, logo, winlosspct, playoffs, divtitles, conftitles, championships)
+	return m.db.Exec("INSERT IGNORE INTO teams(teamabbr, name, logo, winlosspct, playoffs, divisiontitles, conferencetitles, championships) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", teamabbr, name, logo, winlosspct, playoffs, divtitles, conftitles, championships)
 }
 
 func (m *MySqlDB) UpdateStats(gp, gs int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid, teamabbr string) (sql.Result, error) {

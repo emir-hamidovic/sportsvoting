@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS `seasons_entered` (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    season VARCHAR(4)
+);
