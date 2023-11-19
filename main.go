@@ -139,6 +139,7 @@ func main() {
 	api.HandleFunc("/update-admin", updateAdmin).Methods("POST")
 	api.HandleFunc("/upload-profile-pic", uploadProfilePicHandler).Methods("POST")
 	api.HandleFunc("/create-quiz", createQuiz).Methods("POST")
+	api.HandleFunc("/user-votes/{userid}", getUserVotes)
 
 	isDev := true
 	if isdevEnv, exists := os.LookupEnv("IS_DEVELOPMENT"); exists {

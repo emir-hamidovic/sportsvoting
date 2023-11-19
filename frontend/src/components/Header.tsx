@@ -22,6 +22,11 @@ function Header() {
     navigate(`/edit-user/${auth?.id}`)
   }
 
+  const myVotes = () => {
+    handleClose();
+    navigate(`/my-votes/${auth?.id}`)
+  }
+
   const userList = () => {
     handleClose();
     navigate(`/admin/users`)
@@ -46,6 +51,7 @@ function Header() {
             </IconButton>
             <Menu id="profile-menu" anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
             <MenuItem onClick={editAcc}>Account</MenuItem>
+            <MenuItem onClick={myVotes}>My votes</MenuItem>
             { auth.roles.includes("admin") ?
               <MenuItem onClick={userList}>Users</MenuItem> : ''
             }

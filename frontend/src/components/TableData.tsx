@@ -13,7 +13,7 @@ export default function TableData ({ endpoint }: TableDataProps) {
   const [data, setData] = useState<FlattenedAPIResponse[]>([]);
   const [page, setPage] = useState<number>(0);
   const { pollId } = useParams();
-  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(25);
   const customers = useCustomers(data, page, rowsPerPage);
   const customersIds = useCustomerIds(customers);
   const customersSelection = useSelection(customersIds);

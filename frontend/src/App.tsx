@@ -14,6 +14,7 @@ import PersistLogin from './components/PersistLogin';
 import Unauthorized from './components/Unauthorized';
 import AdminUserCreationForm from './components/AdminUserCreationForm';
 import QuizCreationPage from './components/QuizCreationPage';
+import MyVotesPage from './components/MyVotesPage';
 
 function App() {
   return (
@@ -26,12 +27,21 @@ function App() {
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         <Route element={<PersistLogin />}>
-          <Route path="/quiz/:pollId" element={<TableData endpoint='/quiz'/>} />
           <Route path="/results/:pollId" element={<Results />} />
-          <Route path="/create-quiz" element={<QuizCreationPage />} />
+          <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
+            <Route path="/quiz/:pollId" element={<TableData endpoint='/quiz'/>} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
+            <Route path="/create-quiz" element={<QuizCreationPage />} />
+          </Route>
 
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
             <Route path="/edit-user/:userId" element={<AccountEditPage />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
+            <Route path="/my-votes/:userId" element={<MyVotesPage />} />
           </Route>
           
           <Route element={<RequireAuth allowedRoles={["admin"]}/>}>

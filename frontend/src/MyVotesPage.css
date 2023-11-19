@@ -1,0 +1,42 @@
+/* MyVotesPage.css */
+
+.my-votes {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+}
+
+.your-votes {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.vote-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #ddd;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.vote-item:hover {
+  background-color: #f9f9f9;
+}
+
+.vote-item img {
+  width: 100px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.player-info {
+  flex-grow: 1;
+  margin-right: 20px;
+  margin-left: 20px;
+}
+
+/* Remove the voted badge styling */

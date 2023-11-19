@@ -146,6 +146,10 @@ func (m *MySqlDB) GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Ro
 	return m.db.QueryContext(ctx, "SELECT p.name, COUNT(v.votes_for) as votes_for, po.name FROM player_votes v INNER JOIN players p ON v.playerid=p.playerid INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? GROUP BY p.name, po.name ORDER BY COUNT(v.votes_for) DESC", pollid)
 }
 
+func (m *MySqlDB) GetVotesOfUser(ctx context.Context, userid int64) (*sql.Rows, error) {
+	return m.db.QueryContext(ctx, "SELECT v.playerid, p.name, po.name, po.image FROM player_votes v INNER JOIN players p ON v.playerid=p.playerid INNER JOIN polls po ON v.pollid=po.id WHERE v.userid=?", userid)
+}
+
 func (m *MySqlDB) InsertPlayerVotes(pollid, userid int64, playerid string) (sql.Result, error) {
 	var id int64
 	var playerIdDB string

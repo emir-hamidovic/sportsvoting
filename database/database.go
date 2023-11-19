@@ -56,6 +56,7 @@ type Database interface {
 	UpdateUserProfilePic(username, profile_pic string) (sql.Result, error)
 	DeleteUser(id int64) (sql.Result, error)
 	GetAllUsers() (*sql.Rows, error)
+	GetVotesOfUser(ctx context.Context, userid int64) (*sql.Rows, error)
 }
 
 type Config struct {

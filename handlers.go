@@ -713,6 +713,47 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 	w.Write(pollsJSON)
 }
 
+type MyVotesResponse struct {
+	PlayerID   string `json:"player_id"`
+	PlayerName string `json:"player_name"`
+	PollName   string `json:"poll_name"`
+	PollImage  string `json:"poll_image"`
+}
+
+func getUserVotes(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID, err := strconv.Atoi(vars["userid"])
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	rows, err := db.GetVotesOfUser(ctx, int64(userID))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var allVotes []MyVotesResponse
+	for rows.Next() {
+		var votes MyVotesResponse
+		err = rows.Scan(&votes.PlayerID, &votes.PlayerName, &votes.PollName, &votes.PollImage)
+		if err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+
+		allVotes = append(allVotes, votes)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allVotes)
+}
+
 func getSeasons(w http.ResponseWriter, r *http.Request) {
 	var seasons []string
 
