@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sportsvoting/database"
 	"sportsvoting/players"
 	"sportsvoting/teams"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -68,17 +70,22 @@ const (
 var db database.Database
 
 func main() {
+	db_addr := os.Getenv("DBADDRESS")
+	if db_addr == "" {
+		db_addr = "localhost:3306"
+	}
+
 	var err error
-	db, err = database.NewDB(database.Config{DbType: "mysql", DbName: "nba", Addr: "localhost:3306"})
+	db, err = database.NewDB(database.Config{DbType: "mysql", DbName: "nba", Addr: db_addr})
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = InsertTeamAndPlayerInfo(db, players.GetEndYearOfTheSeason())
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	/*
+		err = InsertTeamAndPlayerInfo(db, players.GetEndYearOfTheSeason())
+		if err != nil {
+			log.Fatal(err)
+		}
+	*/
 	// Schedule the function to run on the next 1st of November
 	go func() {
 		currentDate := time.Now()
@@ -111,29 +118,42 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/getpolls", getPolls)
-	r.HandleFunc("/getseasons", getSeasons)
-	r.HandleFunc("/quiz/{pollid:[0-9]+}", GetQuiz)
-	r.HandleFunc("/teamvotes/{id:[0-9]+}", teamVotes)
-	r.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")
-	r.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
-	r.HandleFunc("/login", handleLogin).Methods("POST")
-	r.HandleFunc("/register", handleRegister).Methods("POST")
-	r.HandleFunc("/admin/createuser", createUserAdmin).Methods("POST")
-	r.HandleFunc("/logout", handleLogout)
-	r.HandleFunc("/refresh", handleRefresh)
-	r.HandleFunc("/users/get", handleUserList)
-	r.HandleFunc("/users/delete/{id:[0-9]+}", handleUserDelete).Methods("DELETE")
-	r.HandleFunc("/api/get-user/{id:[0-9]+}", handleGetUserByID)
-	r.HandleFunc("/api/update-email", updateUserEmail).Methods("POST")
-	r.HandleFunc("/api/update-username", updateUsername).Methods("POST")
-	r.HandleFunc("/api/update-password", updatePassword).Methods("POST")
-	r.HandleFunc("/api/update-admin", updateAdmin).Methods("POST")
-	r.HandleFunc("/api/upload-profile-pic", uploadProfilePicHandler).Methods("POST")
-	r.HandleFunc("/api/create-quiz", createQuiz).Methods("POST")
+	api := r.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/getpolls", getPolls)
+	api.HandleFunc("/getseasons", getSeasons)
+	api.HandleFunc("/quiz/{pollid:[0-9]+}", GetQuiz)
+	api.HandleFunc("/teamvotes/{id:[0-9]+}", teamVotes)
+	api.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")
+	api.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
+	api.HandleFunc("/login", handleLogin).Methods("POST")
+	api.HandleFunc("/register", handleRegister).Methods("POST")
+	api.HandleFunc("/admin/createuser", createUserAdmin).Methods("POST")
+	api.HandleFunc("/logout", handleLogout)
+	api.HandleFunc("/refresh", handleRefresh)
+	api.HandleFunc("/users/get", handleUserList)
+	api.HandleFunc("/users/delete/{id:[0-9]+}", handleUserDelete).Methods("DELETE")
+	api.HandleFunc("/get-user/{id:[0-9]+}", handleGetUserByID)
+	api.HandleFunc("/update-email", updateUserEmail).Methods("POST")
+	api.HandleFunc("/update-username", updateUsername).Methods("POST")
+	api.HandleFunc("/update-password", updatePassword).Methods("POST")
+	api.HandleFunc("/update-admin", updateAdmin).Methods("POST")
+	api.HandleFunc("/upload-profile-pic", uploadProfilePicHandler).Methods("POST")
+	api.HandleFunc("/create-quiz", createQuiz).Methods("POST")
+
+	isDev := true
+	if isdevEnv, exists := os.LookupEnv("IS_DEVELOPMENT"); exists {
+		isDev, _ = strconv.ParseBool(isdevEnv)
+	}
+
+	var allowedOrigins []string
+	if isDev {
+		allowedOrigins = []string{"http://localhost:3000", "http://localhost/"}
+	} else {
+		allowedOrigins = []string{"http://frontend:80"}
+	}
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost/"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedHeaders:   []string{"Content-type", "Authorization"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
 		AllowCredentials: true,

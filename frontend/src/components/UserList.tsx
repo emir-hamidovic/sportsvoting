@@ -17,9 +17,9 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AdminIcon from '@mui/icons-material/SupervisorAccount';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import useAuth from '../hooks/use-auth';
+import axiosInstance from '../utils/axios-instance';
 
 type User = {
   id: number;
@@ -40,7 +40,7 @@ const UserListPage: React.FC = () => {
   }, []);
 
   const fetchUsers = () => {
-    axios.get<User[]>('http://localhost:8080/users/get')
+    axiosInstance.get<User[]>('/users/get')
       .then(response => {
         setUsers(response.data);
       })
@@ -51,7 +51,7 @@ const UserListPage: React.FC = () => {
 
 
   const deleteUser = (id: number) => {
-    axios.delete(`http://localhost:8080/users/delete/${id}`)
+    axiosInstance.delete(`/users/delete/${id}`)
       .then(() => {
         fetchUsers();
       })
@@ -62,7 +62,7 @@ const UserListPage: React.FC = () => {
 
   const changeAdmin = async (id: number) => {
     try{
-      const response = await axios.post('http://localhost:8080/api/update-admin', {id: id} );
+      const response = await axiosInstance.post('/update-admin', {id: id} );
       if (response.data) {
         setAuth(prev => {
           return {

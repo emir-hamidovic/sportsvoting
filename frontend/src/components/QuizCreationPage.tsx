@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
 import {
   Button,
   Container,
@@ -8,11 +7,11 @@ import {
   TextField,
   Typography,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   SelectChangeEvent,
 } from '@mui/material';
+import axiosInstance from '../utils/axios-instance';
 
 
 const QuizCreationPage: React.FC = () => {
@@ -26,7 +25,7 @@ const QuizCreationPage: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:8080/getseasons');
+      const response = await axiosInstance.get('/getseasons');
       setSeasonOptions(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -35,7 +34,7 @@ const QuizCreationPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
@@ -78,7 +77,7 @@ const QuizCreationPage: React.FC = () => {
     data.append('selectedStats', selectedStats);
     data.append('photo', selectedFile);
     try {
-      await axios.post('http://localhost:8080/api/create-quiz', data);
+      await axiosInstance.post('/create-quiz', data);
       alert('Quiz created successfully');
     } catch (error) {
       console.error('Error creating quiz:', error);

@@ -1,9 +1,9 @@
 import {Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography, Button, Snackbar} from '@mui/material';
 import { FlattenedAPIResponse } from '../utils/api-response';
-import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import useAuth from '../hooks/use-auth';
 import { useState } from 'react';
+import axiosInstance from '../utils/axios-instance';
 
 
 interface CustomersTableProps {
@@ -59,7 +59,7 @@ export const CustomersTable = (props: CustomersTableProps) => {
     onRowsPerPageChange,
     onSelectOne,
     page = 0,
-    rowsPerPage = 0,
+    rowsPerPage = 25,
     selected = [],
     columns
   } = props;
@@ -80,14 +80,14 @@ export const CustomersTable = (props: CustomersTableProps) => {
   const handleVote = () => {
     const selectedCustomerIds = selected.length === 1 ? selected[0] : '';
 
-    const voteEndpoint = 'http://localhost:8080/playervotes/';
+    const voteEndpoint = '/playervotes/';
     const payload = { playerid: selectedCustomerIds, pollid: Number(id), userid: auth.id };
-    axios.post(voteEndpoint, payload, {
+    axiosInstance.post(voteEndpoint, payload, {
       headers: {
         'Content-Type': 'application/json',
       },
     })
-      .then((response) => {
+      .then(() => {
         setSuccessMessage('Vote updated successfully!');
       })
       .catch((error) => {

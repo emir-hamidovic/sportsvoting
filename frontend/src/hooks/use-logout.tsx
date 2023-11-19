@@ -1,5 +1,5 @@
+import axiosInstance from "../utils/axios-instance";
 import useAuth from "./use-auth";
-import axios from "axios";
 
 export const useLogout = () => {
     const { setAuth } = useAuth();
@@ -7,7 +7,7 @@ export const useLogout = () => {
     const logout = async () => {
         setAuth({user: "", pwd: "", accessToken: "", id: 0, roles: []});
         try {
-            const response = await axios('http://localhost:8080/logout', {
+            await axiosInstance('/logout', {
                 withCredentials: true
             });
         } catch (err) {

@@ -1,8 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import useAuth from '../hooks/use-auth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-
-import axios from 'axios';
+import axiosInstance from '../utils/axios-instance';
 
 const Login = () => {
     const { setAuth, persist, setPersist } = useAuth();
@@ -33,7 +32,7 @@ const Login = () => {
 
         try {
             const basicAuthToken = btoa(`${user}:${pwd}`);
-            const response = await axios.post("http://localhost:8080/login",
+            const response = await axiosInstance.post("/login",
                 "",
                 {
                     headers: { 'Content-Type': 'application/json', Authorization: `Basic ${basicAuthToken}` },

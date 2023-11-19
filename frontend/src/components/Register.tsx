@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import axios from 'axios';
 import { Link } from "react-router-dom";
+import axiosInstance from "../utils/axios-instance";
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -72,7 +72,7 @@ const Register = () => {
             };
 
             const basicAuthToken = btoa(`${user}:${pwd}`);
-            await axios.post("http://localhost:8080/register",
+            await axiosInstance.post("/register",
                 JSON.stringify(userData),
                 {
                     headers: { 'Content-Type': 'application/json', Authorization: `Basic ${basicAuthToken}` },

@@ -1,0 +1,5 @@
+README.md
+*.ed*
+frontend
+.gitignore
+.git

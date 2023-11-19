@@ -12,8 +12,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import useAuth from '../hooks/use-auth';
+import axiosInstance from '../utils/axios-instance';
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -34,7 +34,7 @@ const AccountEditPage: React.FC = () => {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    axios.get(`http://localhost:8080/api/get-user/${userId}`)
+    axiosInstance.get(`/get-user/${userId}`)
       .then(response => {
         const userData = response.data;
         setUserInfo({
@@ -72,16 +72,16 @@ const AccountEditPage: React.FC = () => {
 
     try {
       if(auth.user !== userInfo.username) {
-        await axios.post('http://localhost:8080/api/update-username', {olduser: auth.user, username: userInfo.username});
+        await axiosInstance.post('/update-username', {olduser: auth.user, username: userInfo.username});
         auth.user = userInfo.username;
       }
 
       if (initialEmail !== userInfo.email) {
-        await axios.post('http://localhost:8080/api/update-email', {email: userInfo.email, username: auth.user});
+        await axiosInstance.post('/update-email', {email: userInfo.email, username: auth.user});
       }
 
       if (userInfo.newPassword !== "") {
-        await axios.post('http://localhost:8080/api/update-password', {
+        await axiosInstance.post('/update-password', {
             oldPassword: userInfo.oldPassword,
             newPassword: userInfo.newPassword,
             username: auth.user
@@ -107,7 +107,7 @@ const AccountEditPage: React.FC = () => {
         formData.append('profileImage', fileToUpload, userInfo.username + "-" + userId + ".jpg");
         formData.append("username", userInfo.username);
     
-        const response = await axios.post('http://localhost:8080/api/upload-profile-pic', formData, {
+        const response = await axiosInstance.post('/upload-profile-pic', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

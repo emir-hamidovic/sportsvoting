@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/use-auth';
+import axiosInstance from '../utils/axios-instance';
 
 const Polls = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const Polls = () => {
   const [polls, setPolls] = useState([]);
   const fetchData = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:8080/getpolls');
+      const response = await axiosInstance.get('/getpolls');
       setPolls(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);

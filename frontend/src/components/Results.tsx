@@ -1,7 +1,7 @@
-import axios from "axios";
 import { useState, useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PieChart from "./ChartPie";
+import axiosInstance from "../utils/axios-instance";
 
 interface Votes {
     value: number,
@@ -14,7 +14,7 @@ const Results = () => {
     const [data, setData] = useState<Votes[]>([]);
     const fetchData = useCallback(async () => {
         try {
-            const response = await axios.get<Votes[]>(`http://localhost:8080/playervotes/${pollId}`);
+            const response = await axiosInstance.get<Votes[]>(`/playervotes/${pollId}`);
             if (response.data === null) {
                 setData([])
             } else {

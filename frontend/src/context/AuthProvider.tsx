@@ -25,7 +25,9 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [auth, setAuth] = useState<AuthData>({user: "", pwd: "", accessToken: "", id: 0, roles: []});
-    const [persist, setPersist] = useState<boolean>(JSON.parse(localStorage.getItem("persist") || "") || false);
+    const storedPersist = localStorage.getItem("persist");
+    const initialPersist = storedPersist ? JSON.parse(storedPersist) : false;
+    const [persist, setPersist] = useState<boolean>(initialPersist);
 
     return (
         <AuthContext.Provider value={{ auth, setAuth, persist, setPersist }}>

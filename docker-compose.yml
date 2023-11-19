@@ -1,0 +1,44 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - migrate
+    volumes:
+      - image-volume:/app/shared
+  db:
+    image: mysql:8.0.27
+    command: '--default-authentication-plugin=mysql_native_password'
+    restart: always
+    volumes:
+      - db-data:/var/lib/mysql
+    env_file:
+      - .env
+  migrate:
+    image: migrate/migrate
+    env_file:
+      - .env
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database", "mysql://${DBUSER}:${DBPASS}@tcp(db:3306)/nba?multiStatements=true", "up"]
+    depends_on:
+      - db
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    volumes:
+      - /app/node_modules
+      - image-volume:/usr/share/nginx/html
+    depends_on:
+      - api
+volumes:
+  db-data:
+  image-volume:

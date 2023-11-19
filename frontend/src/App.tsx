@@ -26,7 +26,7 @@ function App() {
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         <Route element={<PersistLogin />}>
-          <Route path="/quiz/:pollId" element={<TableData endpoint='http://localhost:8080/quiz'/>} />
+          <Route path="/quiz/:pollId" element={<TableData endpoint='/quiz'/>} />
           <Route path="/results/:pollId" element={<Results />} />
           <Route path="/create-quiz" element={<QuizCreationPage />} />
 

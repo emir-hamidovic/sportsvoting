@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
 import { CustomersTable } from './CustomersTable';
 import { useSelection } from '../hooks/use-selection';
 import { APIResponse, FlattenedAPIResponse, flattenObject, useCustomerIds, useCustomers } from '../utils/api-response';
 import { useParams } from 'react-router-dom';
+import axiosInstance from '../utils/axios-instance';
 
 interface TableDataProps {
   endpoint: string;
@@ -35,7 +35,7 @@ export default function TableData ({ endpoint }: TableDataProps) {
 
   const fetchData = useCallback(async (endpoint: string) => {
     try {
-      const response = await axios.get<APIResponse[]>(endpoint + "/" + pollId);
+      const response = await axiosInstance.get<APIResponse[]>(endpoint + "/" + pollId);
       const transformedData: FlattenedAPIResponse[] = response.data.map((item) => ({
         playerid: item.playerid,
         name: item.name,
@@ -71,7 +71,7 @@ export default function TableData ({ endpoint }: TableDataProps) {
     } catch (error) {
       console.error('Error fetching data:', error);
     }
-  }, []);
+  }, [pollId]);
 
   useEffect(() => {
     fetchData(endpoint);

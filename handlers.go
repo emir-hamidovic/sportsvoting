@@ -43,7 +43,7 @@ const privateKeyRefreshPath = "refresh.ed"
 const publicKeyRefreshPath = "refresh.ed.pub"
 
 func issueToken(user, privatekey string) (string, error) {
-	keyBytes, err := ioutil.ReadFile(privatekey)
+	keyBytes, err := os.ReadFile(privatekey)
 	if err != nil {
 		panic(fmt.Errorf("unable to read private key file: %w", err))
 	}
@@ -585,9 +585,16 @@ func createQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 	defer image.Close()
 
-	uploadDir := "public/"
-	poll.Image = r.MultipartForm.File["photo"][0].Filename
+	isDev := true
+	if isdevEnv, exists := os.LookupEnv("IS_DEVELOPMENT"); exists {
+		isDev, _ = strconv.ParseBool(isdevEnv)
+	}
 
+	uploadDir := "public/"
+	if !isDev {
+		uploadDir = "/app/shared/"
+	}
+	poll.Image = r.MultipartForm.File["photo"][0].Filename
 	newFile, err := os.Create(uploadDir + poll.Image)
 	if err != nil {
 		http.Error(w, "Unable to create file", http.StatusInternalServerError)

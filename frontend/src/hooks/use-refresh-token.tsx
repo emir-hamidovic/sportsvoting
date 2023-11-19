@@ -1,11 +1,11 @@
+import axiosInstance from '../utils/axios-instance';
 import useAuth from './use-auth';
-import axios from 'axios';
 
 const useRefreshToken = () => {
     const { setAuth } = useAuth();
 
     const refresh = async () => {
-        const response = await axios.get('http://localhost:8080/refresh', {
+        const response = await axiosInstance.get('/refresh', {
             withCredentials: true
         });
 

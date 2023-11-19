@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, TextField, Container, Paper, Typography, Snackbar } from '@mui/material';
-import axios from 'axios';
+import axiosInstance from '../utils/axios-instance';
 
 const AdminUserCreationForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -42,7 +42,7 @@ const AdminUserCreationForm: React.FC = () => {
     }
 
     try {
-        const response = await axios.post('http://localhost:8080/admin/createuser', formData);
+        const response = await axiosInstance.post('/admin/createuser', formData);
   
         if (response.status === 200) {
             setSuccessMessage('User creation successful');
