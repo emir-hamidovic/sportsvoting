@@ -12,6 +12,8 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 import axiosInstance from '../utils/axios-instance';
+import { useNavigate } from 'react-router-dom';
+import useAuth from '../hooks/use-auth';
 
 
 const QuizCreationPage: React.FC = () => {
@@ -22,6 +24,8 @@ const QuizCreationPage: React.FC = () => {
   const [statsOptions] = useState<string[]>(["All stats", "Defensive", "Sixth man", "Rookie"]);
   const [seasonOptions, setSeasonOptions] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const navigate = useNavigate();
+  const { auth } = useAuth();
 
   const fetchData = useCallback(async () => {
     try {
@@ -76,9 +80,11 @@ const QuizCreationPage: React.FC = () => {
     data.append('season', season);
     data.append('selectedStats', selectedStats);
     data.append('photo', selectedFile);
+    data.append('userid', auth.id.toString());
     try {
       await axiosInstance.post('/create-quiz', data);
       alert('Quiz created successfully');
+      navigate(-1);
     } catch (error) {
       console.error('Error creating quiz:', error);
       alert('An error occurred while creating the quiz.');
@@ -136,21 +142,21 @@ const QuizCreationPage: React.FC = () => {
               />
             </Grid>
             <Grid item md={12}>
-  <div className="label">Select stats type to display:</div>
-  <FormControl fullWidth variant="standard">
-    <Select
-      value={selectedStats}
-      onChange={handleStatsChange}
-      label="Select Stats type"
-    >
-      {statsOptions.map((stat) => (
-        <MenuItem key={stat} value={stat}>
-          {stat}
-        </MenuItem>
-      ))}
-    </Select>
-  </FormControl>
-</Grid>
+              <div className="label">Select stats type to display:</div>
+              <FormControl fullWidth variant="standard">
+                <Select
+                  value={selectedStats}
+                  onChange={handleStatsChange}
+                  label="Select Stats type"
+                >
+                  {statsOptions.map((stat) => (
+                    <MenuItem key={stat} value={stat}>
+                      {stat}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
             <Grid item md={12}>
               <Button
                 type="submit"

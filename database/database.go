@@ -12,6 +12,7 @@ const (
 )
 
 type Database interface {
+	CreateAdminUser() error
 	InsertSeasonEntered(season string) (sql.Result, error)
 	SelectSeasonsAvailable() (*sql.Rows, error)
 	InsertPlayer(playerid, name, college, teamabbr, height, weight string, age int64) (sql.Result, error)
@@ -35,10 +36,14 @@ type Database interface {
 	SetRookieStatus(id string) (sql.Result, error)
 	GetPolls(ctx context.Context) (*sql.Rows, error)
 	GetPollByID(id int64) *sql.Row
-	InsertPolls(name, description, image, selected_stats, season string) (sql.Result, error)
-	InsertPollsWithId(id int64, name, description, image, selected_stats, season string) (sql.Result, error)
+	GetPollByUserID(userid int64) (*sql.Rows, error)
+	InsertPolls(name, description, image, selected_stats, season string, userid int64) (sql.Result, error)
+	InsertPollsWithId(id int64, name, description, image, selected_stats, season string, userid int64) (sql.Result, error)
 	GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
 	InsertPlayerVotes(pollid, userid int64, playerid string) (sql.Result, error)
+	DeletePollByID(pollid int64) (sql.Result, error)
+	ResetPollVotes(pollid int64) (sql.Result, error)
+	UpdatePollByID(name, description, selected_stats, season string, pollid int64) (sql.Result, error)
 	GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
 	GetUserByUsername(username string) *sql.Row
 	GetUserByRefreshToken(refresh_token string) *sql.Row
@@ -54,6 +59,7 @@ type Database interface {
 	UpdateUserEmail(username, email string) (sql.Result, error)
 	UpdateUserUsername(oldusername, username string) (sql.Result, error)
 	UpdateUserProfilePic(username, profile_pic string) (sql.Result, error)
+	UpdatePollImage(pollId int64, pollImage string) (sql.Result, error)
 	DeleteUser(id int64) (sql.Result, error)
 	GetAllUsers() (*sql.Rows, error)
 	GetVotesOfUser(ctx context.Context, userid int64) (*sql.Rows, error)

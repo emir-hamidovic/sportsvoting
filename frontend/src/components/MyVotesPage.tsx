@@ -28,7 +28,7 @@ const MyVotesPage: React.FC = () => {
   useEffect(() => {
     fetchUserVotes();
   }, [fetchUserVotes]);
-console.log(userVotes);
+
   return (
     <div className="my-votes">
       <h1 className="text-3xl">Your Votes</h1>
@@ -41,7 +41,6 @@ console.log(userVotes);
               <p>{`Player Name: ${vote.player_name}`}</p>
               <p>{`Poll Name: ${vote.poll_name}`}</p>
             </div>
-
 
             <Avatar src={`../${vote.poll_image}`} />
           </li>

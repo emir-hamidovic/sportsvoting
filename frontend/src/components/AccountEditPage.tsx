@@ -126,7 +126,6 @@ const AccountEditPage: React.FC = () => {
     }
   };
   
-  console.log(userInfo.profile_pic);
   return (
     <Container maxWidth="lg">
       <Paper elevation={3} sx={{ padding: 3 }}>

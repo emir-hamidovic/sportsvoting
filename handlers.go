@@ -27,6 +27,7 @@ type Poll struct {
 	Image         string `json:"image"`
 	SelectedStats string `json:"selected_stats"`
 	Season        string `json:"season"`
+	UserID        int64  `json:"user_id,omitempty"`
 }
 
 type User struct {
@@ -423,12 +424,32 @@ func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 
 func getPollByID(id int64) (Poll, error) {
 	var poll Poll
-	err := db.GetPollByID(id).Scan(&poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season)
+	err := db.GetPollByID(id).Scan(&poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season, &poll.UserID)
 	if err != nil {
 		return Poll{}, err
 	}
 
 	return poll, nil
+}
+
+func getPollByUserID(userid int64) ([]Poll, error) {
+	rows, err := db.GetPollByUserID(userid)
+	if err != nil {
+		return nil, err
+	}
+
+	var polls []Poll
+	for rows.Next() {
+		var poll Poll
+		err = rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season)
+		if err != nil {
+			return nil, err
+		}
+
+		polls = append(polls, poll)
+	}
+
+	return polls, nil
 }
 
 func handleUserDelete(w http.ResponseWriter, r *http.Request) {
@@ -571,6 +592,34 @@ func updateAdmin(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newRoles)
 }
 
+func updatePoll(w http.ResponseWriter, r *http.Request) {
+	var poll Poll
+	if err := json.NewDecoder(r.Body).Decode(&poll); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var p Poll
+	err := db.GetPollByID(poll.ID).Scan(&p.Name, &p.Description, &p.Image, &p.SelectedStats, &p.Season, &p.UserID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.UpdatePollByID(poll.Name, poll.Description, poll.SelectedStats, poll.Season, poll.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// if the season or stats changed for the poll, rest the votes
+	if p.Season != poll.Season || p.SelectedStats != poll.SelectedStats {
+		db.ResetPollVotes(poll.ID)
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func createQuiz(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20) // 10 MB limit for file size
 	var poll Poll
@@ -578,6 +627,13 @@ func createQuiz(w http.ResponseWriter, r *http.Request) {
 	poll.Description = r.FormValue("description")
 	poll.Season = r.FormValue("season")
 	poll.SelectedStats = r.FormValue("selectedStats")
+	userID, err := strconv.ParseInt(r.FormValue("userid"), 10, 64)
+	if err != nil {
+		http.Error(w, "Unable to parse user id", http.StatusBadRequest)
+		return
+	}
+
+	poll.UserID = userID
 	image, _, err := r.FormFile("photo")
 	if err != nil {
 		http.Error(w, "Unable to parse file", http.StatusBadRequest)
@@ -607,8 +663,7 @@ func createQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to copy file", http.StatusInternalServerError)
 		return
 	}
-
-	insertRes, err := db.InsertPolls(poll.Name, poll.Description, poll.Image, poll.SelectedStats, poll.Season)
+	insertRes, err := db.InsertPolls(poll.Name, poll.Description, poll.Image, poll.SelectedStats, poll.Season, poll.UserID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -618,6 +673,53 @@ func createQuiz(w http.ResponseWriter, r *http.Request) {
 	response := fmt.Sprintf("Created quiz with ID: %d", insertID)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(response))
+}
+
+func deletePollByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["pollid"]
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := db.DeletePollByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	response := map[string]interface{}{
+		"message":       "Poll deleted successfully",
+		"rows_affected": rowsAffected,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func resetPollVotes(w http.ResponseWriter, r *http.Request) {
+	var id int64
+	if err := json.NewDecoder(r.Body).Decode(&id); err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.ResetPollVotes(id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }
 
 func uploadProfilePicHandler(w http.ResponseWriter, r *http.Request) {
@@ -680,6 +782,64 @@ func uploadProfilePicHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func updatePollImage(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10 << 20) // 10 MB limit for file size
+
+	file, _, err := r.FormFile("pollImage")
+	if err != nil {
+		http.Error(w, "Unable to parse file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	uploadDir := "frontend/public/"
+	fileName := r.MultipartForm.File["pollImage"][0].Filename
+	pollId := r.FormValue("pollId")
+	pollIdInt, _ := strconv.ParseInt(pollId, 10, 64)
+
+	var p Poll
+	var pollimage sql.NullString
+	err = db.GetPollByID(pollIdInt).Scan(&p.Name, &p.Description, &pollimage, &p.SelectedStats, &p.Season, &p.UserID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	p.Image = pollimage.String
+	if p.Image != "" {
+		err := os.Remove(uploadDir + p.Image)
+		if err != nil {
+			http.Error(w, "Error deleting old poll image", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	newFile, err := os.Create(uploadDir + fileName)
+	if err != nil {
+		http.Error(w, "Unable to create file", http.StatusInternalServerError)
+		return
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, file)
+	if err != nil {
+		http.Error(w, "Unable to copy file", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.UpdatePollImage(pollIdInt, fileName)
+	if err != nil {
+		http.Error(w, "Unable to update poll image", http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"success":  true,
+		"fileName": fileName,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func getPolls(w http.ResponseWriter, r *http.Request) {
 	var polls []Poll
 
@@ -695,7 +855,7 @@ func getPolls(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var poll Poll
-		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season)
+		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season, &poll.UserID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -822,6 +982,43 @@ func GetQuiz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'")
 	json.NewEncoder(w).Encode(players)
+}
+
+func GetQuizById(w http.ResponseWriter, r *http.Request) {
+	pollId := mux.Vars(r)["pollid"]
+	id, err := strconv.ParseInt(pollId, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	poll, err := getPollByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Security-Policy", "default-src 'self'")
+	json.NewEncoder(w).Encode(poll)
+}
+func getUserPolls(w http.ResponseWriter, r *http.Request) {
+	userId := mux.Vars(r)["userid"]
+	id, err := strconv.ParseInt(userId, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	polls, err := getPollByUserID(id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(polls)
 }
 
 func getRookieStats(ctx context.Context, season string) ([]players.Player, error) {

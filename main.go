@@ -80,6 +80,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	err = db.CreateAdminUser()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	/*
 		err = InsertTeamAndPlayerInfo(db, players.GetEndYearOfTheSeason())
 		if err != nil {
@@ -107,14 +113,14 @@ func main() {
 	}()
 
 	polls := []Poll{
-		{1, "MVP", "Description for MVP", "mvp-trophy.jpg", "All stats", "2023"},
-		{2, "ROY", "Description for ROY", "roy-trophy.jpeg", "Rookie", "2023"},
-		{3, "DPOY", "Description for DPOY", "dpoy-trophy.jpeg", "Defensive", "2023"},
-		{4, "Sixth Man", "Description for 6-man", "6moy-trophy.jpeg", "Sixth man", "2023"},
+		{1, "MVP", "Description for MVP", "mvp-trophy.jpg", "All stats", "2023", 1},
+		{2, "ROY", "Description for ROY", "roy-trophy.jpeg", "Rookie", "2023", 1},
+		{3, "DPOY", "Description for DPOY", "dpoy-trophy.jpeg", "Defensive", "2023", 1},
+		{4, "Sixth Man", "Description for 6-man", "6moy-trophy.jpeg", "Sixth man", "2023", 1},
 	}
 
 	for _, val := range polls {
-		db.InsertPollsWithId(val.ID, val.Name, val.Description, val.Image, val.SelectedStats, val.Season)
+		db.InsertPollsWithId(val.ID, val.Name, val.Description, val.Image, val.SelectedStats, val.Season, val.UserID)
 	}
 
 	r := mux.NewRouter()
@@ -122,6 +128,7 @@ func main() {
 	api.HandleFunc("/getpolls", getPolls)
 	api.HandleFunc("/getseasons", getSeasons)
 	api.HandleFunc("/quiz/{pollid:[0-9]+}", GetQuiz)
+	api.HandleFunc("/get-poll/{pollid:[0-9]+}", GetQuizById)
 	api.HandleFunc("/teamvotes/{id:[0-9]+}", teamVotes)
 	api.HandleFunc("/playervotes/{id:[0-9]+}", playerVotes).Methods("GET")
 	api.HandleFunc("/playervotes/", insertPlayerVotes).Methods("POST")
@@ -138,8 +145,13 @@ func main() {
 	api.HandleFunc("/update-password", updatePassword).Methods("POST")
 	api.HandleFunc("/update-admin", updateAdmin).Methods("POST")
 	api.HandleFunc("/upload-profile-pic", uploadProfilePicHandler).Methods("POST")
+	api.HandleFunc("/update-poll-image", updatePollImage).Methods("POST")
 	api.HandleFunc("/create-quiz", createQuiz).Methods("POST")
 	api.HandleFunc("/user-votes/{userid}", getUserVotes)
+	api.HandleFunc("/user-polls/{userid}", getUserPolls)
+	api.HandleFunc("/delete-poll/{pollid}", deletePollByID).Methods("DELETE")
+	api.HandleFunc("/reset-poll", resetPollVotes).Methods("POST")
+	api.HandleFunc("/update-poll", updatePoll).Methods("POST")
 
 	isDev := true
 	if isdevEnv, exists := os.LookupEnv("IS_DEVELOPMENT"); exists {

@@ -15,6 +15,8 @@ import Unauthorized from './components/Unauthorized';
 import AdminUserCreationForm from './components/AdminUserCreationForm';
 import QuizCreationPage from './components/QuizCreationPage';
 import MyVotesPage from './components/MyVotesPage';
+import MyPollsPage from './components/MyPollsPage';
+import EditPollPage from './components/EditPollPage';
 
 function App() {
   return (
@@ -41,7 +43,15 @@ function App() {
           </Route>
 
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
+            <Route path="/edit-poll/:pollId" element={<EditPollPage />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
             <Route path="/my-votes/:userId" element={<MyVotesPage />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
+            <Route path="/my-polls/:userId" element={<MyPollsPage />} />
           </Route>
           
           <Route element={<RequireAuth allowedRoles={["admin"]}/>}>

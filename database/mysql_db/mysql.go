@@ -3,9 +3,11 @@ package mysql_db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 
 	"github.com/go-sql-driver/mysql"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type MySqlDB struct {
@@ -33,6 +35,35 @@ func NewDB(dbname string, addr string) (*MySqlDB, error) {
 	}
 
 	return &MySqlDB{db: db}, nil
+}
+
+func (m *MySqlDB) CreateAdminUser() error {
+	var count int
+	err := m.db.QueryRow("SELECT COUNT(*) FROM users WHERE id = 1").Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	dbPass := os.Getenv("DBPASS")
+	if count == 0 {
+		bytes, err := bcrypt.GenerateFromPassword([]byte(dbPass), 14)
+		if err != nil {
+			return err
+		}
+
+		dbPass = string(bytes)
+		_, err = m.db.Exec("INSERT INTO users(id, username, password) VALUES (1, 'admin', ?)", dbPass)
+		if err != nil {
+			return fmt.Errorf("error inserting admin user: %v", err)
+		}
+
+		_, err = m.db.Exec("INSERT INTO user_roles (user_id, role) VALUES (?, ?)", 1, "user,admin")
+		if err != nil {
+			return fmt.Errorf("error inserting user role for admin: %v", err)
+		}
+	}
+
+	return nil
 }
 
 func (m *MySqlDB) InsertSeasonEntered(season string) (sql.Result, error) {
@@ -127,19 +158,23 @@ func (m *MySqlDB) GetROYStats(ctx context.Context, season string) (*sql.Rows, er
 }
 
 func (m *MySqlDB) GetPolls(ctx context.Context) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT id, name, description, image, selected_stats, season FROM polls")
+	return m.db.QueryContext(ctx, "SELECT id, name, description, image, selected_stats, season, userid FROM polls")
 }
 
 func (m *MySqlDB) GetPollByID(id int64) *sql.Row {
-	return m.db.QueryRow("SELECT name, description, image, selected_stats, season FROM polls WHERE id=?", id)
+	return m.db.QueryRow("SELECT name, description, image, selected_stats, season, userid FROM polls WHERE id=?", id)
 }
 
-func (m *MySqlDB) InsertPolls(name, description, image, selected_stats, season string) (sql.Result, error) {
-	return m.db.Exec("INSERT IGNORE INTO polls(name, description, image, selected_stats, season) VALUES (?, ?, ?, ?, ?)", name, description, image, selected_stats, season)
+func (m *MySqlDB) GetPollByUserID(userid int64) (*sql.Rows, error) {
+	return m.db.Query("SELECT id, name, description, image, selected_stats, season FROM polls WHERE userid=?", userid)
 }
 
-func (m *MySqlDB) InsertPollsWithId(id int64, name, description, image, selected_stats, season string) (sql.Result, error) {
-	return m.db.Exec("INSERT IGNORE INTO polls(id, name, description, image, selected_stats, season) VALUES (?, ?, ?, ?, ?, ?)", id, name, description, image, selected_stats, season)
+func (m *MySqlDB) InsertPolls(name, description, image, selected_stats, season string, userid int64) (sql.Result, error) {
+	return m.db.Exec("INSERT IGNORE INTO polls(name, description, image, selected_stats, season, userid) VALUES (?, ?, ?, ?, ?, ?)", name, description, image, selected_stats, season, userid)
+}
+
+func (m *MySqlDB) InsertPollsWithId(id int64, name, description, image, selected_stats, season string, userid int64) (sql.Result, error) {
+	return m.db.Exec("INSERT IGNORE INTO polls(id, name, description, image, selected_stats, season, userid) VALUES (?, ?, ?, ?, ?, ?, ?)", id, name, description, image, selected_stats, season, userid)
 }
 
 func (m *MySqlDB) GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {
@@ -164,6 +199,18 @@ func (m *MySqlDB) InsertPlayerVotes(pollid, userid int64, playerid string) (sql.
 	}
 
 	return nil, nil
+}
+
+func (m *MySqlDB) DeletePollByID(pollid int64) (sql.Result, error) {
+	return m.db.Exec("DELETE FROM polls WHERE id=?", pollid)
+}
+
+func (m *MySqlDB) UpdatePollByID(name, description, selected_stats, season string, pollid int64) (sql.Result, error) {
+	return m.db.Exec("UPDATE polls SET name=?, description=?, selected_stats=?, season=? WHERE id=?", name, description, selected_stats, season, pollid)
+}
+
+func (m *MySqlDB) ResetPollVotes(pollid int64) (sql.Result, error) {
+	return m.db.Exec("DELETE FROM player_votes WHERE pollid=?", pollid)
 }
 
 func (m *MySqlDB) GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {
@@ -224,6 +271,10 @@ func (m *MySqlDB) UpdateUserUsername(oldusername, username string) (sql.Result, 
 
 func (m *MySqlDB) UpdateUserProfilePic(username, profile_pic string) (sql.Result, error) {
 	return m.db.Exec("UPDATE users SET profile_pic=? WHERE username=?", profile_pic, username)
+}
+
+func (m *MySqlDB) UpdatePollImage(pollId int64, pollImage string) (sql.Result, error) {
+	return m.db.Exec("UPDATE polls SET image=? WHERE id=?", pollImage, pollId)
 }
 
 func (m *MySqlDB) DeleteUser(id int64) (sql.Result, error) {
