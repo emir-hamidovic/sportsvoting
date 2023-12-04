@@ -8,7 +8,10 @@ import (
 	"os"
 	"sportsvoting/database"
 	"sportsvoting/players"
+	"sportsvoting/polls"
 	"sportsvoting/teams"
+	"sportsvoting/users"
+	"sportsvoting/votes"
 	"strconv"
 	"time"
 
@@ -62,11 +65,6 @@ func RunUpdate(db database.Database, ctx context.Context) {
 	}
 }
 
-const (
-	UserRoleAdmin string = "admin"
-	UserRoleUser  string = "user"
-)
-
 var db database.Database
 
 func main() {
@@ -112,51 +110,54 @@ func main() {
 		}
 	}()
 
-	polls := []Poll{
-		{1, "MVP", "Description for MVP", "mvp-trophy.jpg", "All stats", "2023", 1},
-		{2, "ROY", "Description for ROY", "roy-trophy.jpeg", "Rookie", "2023", 1},
-		{3, "DPOY", "Description for DPOY", "dpoy-trophy.jpeg", "Defensive", "2023", 1},
-		{4, "Sixth Man", "Description for 6-man", "6moy-trophy.jpeg", "Sixth man", "2023", 1},
+	pollsInsert := []polls.Poll{
+		{ID: 1, Name: "MVP", Description: "Description for MVP", Image: "mvp-trophy.jpg", SelectedStats: "All stats", Season: "2023", UserID: 1},
+		{ID: 2, Name: "ROY", Description: "Description for ROY", Image: "roy-trophy.jpeg", SelectedStats: "Rookie", Season: "2023", UserID: 1},
+		{ID: 3, Name: "DPOY", Description: "Description for DPOY", Image: "dpoy-trophy.jpeg", SelectedStats: "Defensive", Season: "2023", UserID: 1},
+		{ID: 4, Name: "Sixth Man", Description: "Description for 6-man", Image: "6moy-trophy.jpeg", SelectedStats: "Sixth man", Season: "2023", UserID: 1},
 	}
 
-	for _, val := range polls {
+	for _, val := range pollsInsert {
 		db.InsertPollsWithId(val.ID, val.Name, val.Description, val.Image, val.SelectedStats, val.Season, val.UserID)
 	}
 
+	usersHandler := users.UsersHandler{DB: db}
+	votesHandler := votes.VotesHandler{DB: db}
+	pollsHandler := polls.PollsHandler{DB: db}
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
 
-	api.HandleFunc("/register", handleRegister).Methods("POST")
-	api.HandleFunc("/login", handleLogin).Methods("POST")
-	api.HandleFunc("/logout", handleLogout)
-	api.HandleFunc("/refresh", handleRefresh)
+	api.HandleFunc("/register", usersHandler.HandleRegister).Methods("POST")
+	api.HandleFunc("/login", usersHandler.HandleLogin).Methods("POST")
+	api.HandleFunc("/logout", usersHandler.HandleLogout)
+	api.HandleFunc("/refresh", usersHandler.HandleRefresh)
 
-	api.HandleFunc("/users/get/{id:[0-9]+}", handleGetUserByID)
-	api.HandleFunc("/users/get", handleUserList)
-	api.HandleFunc("/users/delete/{id:[0-9]+}", handleUserDelete).Methods("DELETE")
-	api.HandleFunc("/users/email/update", updateUserEmail).Methods("POST")
-	api.HandleFunc("/users/username/update", updateUsername).Methods("POST")
-	api.HandleFunc("/users/password/update", updatePassword).Methods("POST")
-	api.HandleFunc("/users/admin/update", updateAdmin).Methods("POST")
-	api.HandleFunc("/users/image/update", uploadProfilePicHandler).Methods("POST")
-	api.HandleFunc("/users/admin/create", createUserAdmin).Methods("POST")
+	api.HandleFunc("/users/get/{id:[0-9]+}", usersHandler.HandleGetUserByID)
+	api.HandleFunc("/users/get", usersHandler.HandleUserList)
+	api.HandleFunc("/users/delete/{id:[0-9]+}", usersHandler.HandleUserDelete).Methods("DELETE")
+	api.HandleFunc("/users/email/update", usersHandler.UpdateUserEmail).Methods("POST")
+	api.HandleFunc("/users/username/update", usersHandler.UpdateUsername).Methods("POST")
+	api.HandleFunc("/users/password/update", usersHandler.UpdatePassword).Methods("POST")
+	api.HandleFunc("/users/admin/update", usersHandler.UpdateAdmin).Methods("POST")
+	api.HandleFunc("/users/image/update", usersHandler.UploadProfilePicHandler).Methods("POST")
+	api.HandleFunc("/users/admin/create", usersHandler.CreateUserAdmin).Methods("POST")
 
-	api.HandleFunc("/polls/players/get/{pollid:[0-9]+}", GetQuiz)
-	api.HandleFunc("/polls/get/{pollid:[0-9]+}", GetQuizById)
-	api.HandleFunc("/polls/get", getPolls)
-	api.HandleFunc("/polls/delete/{pollid:[0-9]+}", deletePollByID).Methods("DELETE")
-	api.HandleFunc("/polls/create", createQuiz).Methods("POST")
-	api.HandleFunc("/polls/image/update", updatePollImage).Methods("POST")
-	api.HandleFunc("/polls/votes/reset", resetPollVotes).Methods("POST")
-	api.HandleFunc("/polls/update", updatePoll).Methods("POST")
-	api.HandleFunc("/polls/users/get/{userid}", getUserPolls)
+	api.HandleFunc("/polls/players/get/{pollid:[0-9]+}", pollsHandler.GetPlayerStatsForPoll)
+	api.HandleFunc("/polls/get/{pollid:[0-9]+}", pollsHandler.GetPollById)
+	api.HandleFunc("/polls/get", pollsHandler.GetPolls)
+	api.HandleFunc("/polls/create", pollsHandler.CreatePoll).Methods("POST")
+	api.HandleFunc("/polls/update", pollsHandler.UpdatePoll).Methods("POST")
+	api.HandleFunc("/polls/delete/{pollid:[0-9]+}", pollsHandler.DeletePollByID).Methods("DELETE")
+	api.HandleFunc("/polls/image/update", pollsHandler.UpdatePollImage).Methods("POST")
+	api.HandleFunc("/polls/votes/reset", pollsHandler.ResetPollVotes).Methods("POST")
+	api.HandleFunc("/polls/users/get/{userid}", pollsHandler.GetUserPolls)
 
-	api.HandleFunc("/votes/user/get/{userid}", getUserVotes)
-	api.HandleFunc("/votes/players/{id:[0-9]+}", playerVotes).Methods("GET")
-	api.HandleFunc("/votes/players", insertPlayerVotes).Methods("POST")
-	api.HandleFunc("/votes/teams/{id:[0-9]+}", teamVotes)
+	api.HandleFunc("/votes/user/get/{userid}", votesHandler.GetUserVotes)
+	api.HandleFunc("/votes/players/{id:[0-9]+}", votesHandler.PlayerVotes).Methods("GET")
+	api.HandleFunc("/votes/players", votesHandler.InsertPlayerVotes).Methods("POST")
+	api.HandleFunc("/votes/teams/{id:[0-9]+}", votesHandler.TeamVotes)
 
-	api.HandleFunc("/seasons/get", getSeasons)
+	api.HandleFunc("/seasons/get", pollsHandler.GetSeasons)
 
 	isDev := true
 	if isdevEnv, exists := os.LookupEnv("IS_DEVELOPMENT"); exists {
