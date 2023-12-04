@@ -62,7 +62,7 @@ const UserListPage: React.FC = () => {
 
   const changeAdmin = async (id: number) => {
     try{
-      const response = await axiosInstance.post('/update-admin', {id: id} );
+      const response = await axiosInstance.post('/users/admin/update', {id: id} );
       if (response.data) {
         setAuth(prev => {
           return {

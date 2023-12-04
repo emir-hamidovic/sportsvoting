@@ -34,7 +34,7 @@ const AccountEditPage: React.FC = () => {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    axiosInstance.get(`/get-user/${userId}`)
+    axiosInstance.get(`/users/get/${userId}`)
       .then(response => {
         const userData = response.data;
         setUserInfo({
@@ -72,16 +72,16 @@ const AccountEditPage: React.FC = () => {
 
     try {
       if(auth.user !== userInfo.username) {
-        await axiosInstance.post('/update-username', {olduser: auth.user, username: userInfo.username});
+        await axiosInstance.post('/users/username/update', {olduser: auth.user, username: userInfo.username});
         auth.user = userInfo.username;
       }
 
       if (initialEmail !== userInfo.email) {
-        await axiosInstance.post('/update-email', {email: userInfo.email, username: auth.user});
+        await axiosInstance.post('/users/email/update', {email: userInfo.email, username: auth.user});
       }
 
       if (userInfo.newPassword !== "") {
-        await axiosInstance.post('/update-password', {
+        await axiosInstance.post('/users/password/update', {
             oldPassword: userInfo.oldPassword,
             newPassword: userInfo.newPassword,
             username: auth.user
@@ -107,7 +107,7 @@ const AccountEditPage: React.FC = () => {
         formData.append('profileImage', fileToUpload, userInfo.username + "-" + userId + ".jpg");
         formData.append("username", userInfo.username);
     
-        const response = await axiosInstance.post('/upload-profile-pic', formData, {
+        const response = await axiosInstance.post('/users/image/update', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

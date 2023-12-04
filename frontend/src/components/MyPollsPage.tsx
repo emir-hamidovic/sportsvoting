@@ -41,7 +41,7 @@ const MyPollsPage: React.FC = () => {
   }, []);
 
   const fetchPolls = () => {
-    axiosInstance.get<Poll[]>(`/user-polls/${auth.id}`)
+    axiosInstance.get<Poll[]>(`/polls/users/get/${auth.id}`)
       .then(response => {
         setPolls(response.data);
       })
@@ -51,7 +51,7 @@ const MyPollsPage: React.FC = () => {
   };
 
   const deletePoll = (id: number) => {
-    axiosInstance.delete(`/delete-poll/${id}`)
+    axiosInstance.delete(`/polls/delete/${id}`)
       .then(() => {
         fetchPolls();
         setSuccessMessage('Poll deleted successfully!');
@@ -63,7 +63,7 @@ const MyPollsPage: React.FC = () => {
   };
 
   const resetVotes = (id: number) => {
-    axiosInstance.post("/reset-poll", id)
+    axiosInstance.post("/polls/votes/reset", id)
     .then(() => {
       fetchPolls();
       setSuccessMessage('Poll votes resetted successfully!');
@@ -119,7 +119,7 @@ const MyPollsPage: React.FC = () => {
           ))}
         </List>
         <Box textAlign="center" mt={1}>
-          <Button variant="contained" color="primary" onClick={() => navigate("/create-quiz")}>
+          <Button variant="contained" color="primary" onClick={() => navigate("/create-poll")}>
             Create New Poll
           </Button>
         </Box>

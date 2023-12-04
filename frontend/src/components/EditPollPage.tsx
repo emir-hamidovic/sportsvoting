@@ -52,7 +52,7 @@ const EditPollPage: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     try {
-        const response = await axiosInstance.get(`/get-poll/${pollId}`);
+        const response = await axiosInstance.get(`/polls/get/${pollId}`);
         const pollData = response.data;
     
         setPollInfo({
@@ -75,7 +75,7 @@ const EditPollPage: React.FC = () => {
         setSelectedStats(pollData.selected_stats);
         setSelectedSeason(pollData.season.toString());
 
-        const seasonsResponse = await axiosInstance.get('/getseasons');
+        const seasonsResponse = await axiosInstance.get('/seasons/get');
         setSeasonOptions(seasonsResponse.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -99,7 +99,7 @@ const EditPollPage: React.FC = () => {
 
     try {
         if (initialPollInfo.name !== pollInfo.name || initialPollInfo.description !== pollInfo.description || initialPollInfo.selected_stats !== pollInfo.selected_stats || initialPollInfo.season !== pollInfo.season) {
-        await axiosInstance.post('/update-poll', {
+        await axiosInstance.post('/polls/update', {
             id: pollInfo.id,
             name: pollInfo.name,
             description: pollInfo.description,
@@ -126,7 +126,7 @@ const EditPollPage: React.FC = () => {
         formData.append('pollImage', fileToUpload, `poll-${pollInfo.id}.jpg`);
         formData.append("pollId", pollInfo.id.toString());
 
-        const response = await axiosInstance.post('/update-poll-image', formData, {
+        const response = await axiosInstance.post('/polls/image/update', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

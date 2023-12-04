@@ -29,7 +29,7 @@ const QuizCreationPage: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await axiosInstance.get('/getseasons');
+      const response = await axiosInstance.get('/seasons/get');
       setSeasonOptions(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -82,7 +82,7 @@ const QuizCreationPage: React.FC = () => {
     data.append('photo', selectedFile);
     data.append('userid', auth.id.toString());
     try {
-      await axiosInstance.post('/create-quiz', data);
+      await axiosInstance.post('/polls/create', data);
       alert('Quiz created successfully');
       navigate(-1);
     } catch (error) {

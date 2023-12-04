@@ -18,7 +18,7 @@ const MyVotesPage: React.FC = () => {
 
   const fetchUserVotes = useCallback(async () => {
     try {
-      const response = await axiosInstance.get<MyVotesResponse[]>(`/user-votes/${auth.id}`);
+      const response = await axiosInstance.get<MyVotesResponse[]>(`/votes/users/get/${auth.id}`);
       setUserVotes(response.data);
     } catch (error) {
       console.error('Error fetching user votes:', error);

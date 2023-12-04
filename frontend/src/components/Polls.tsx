@@ -9,7 +9,7 @@ const Polls = () => {
   const [polls, setPolls] = useState([]);
   const fetchData = useCallback(async () => {
     try {
-      const response = await axiosInstance.get('/getpolls');
+      const response = await axiosInstance.get('/polls/get');
       setPolls(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -35,7 +35,7 @@ const Polls = () => {
             </div>
             <div className="poll-actions">
               {auth.user ? 
-              <button className="vote-button" onClick={() => navigate(`/quiz/${poll['id']}`)}>Vote</button> : 
+              <button className="vote-button" onClick={() => navigate(`/poll/${poll['id']}`)}>Vote</button> : 
               ''
               }
               <button className="results-button" onClick={() => navigate(`/results/${poll['id']}`)}>Check Results</button>

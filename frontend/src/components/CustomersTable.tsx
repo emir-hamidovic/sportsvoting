@@ -83,7 +83,7 @@ export const CustomersTable = (props: CustomersTableProps) => {
   const handleVote = () => {
     const selectedCustomerIds = selected.length === 1 ? selected[0] : '';
 
-    const voteEndpoint = '/playervotes/';
+    const voteEndpoint = '/votes/players';
     const payload = { playerid: selectedCustomerIds, pollid: Number(id), userid: auth.id };
     axiosInstance
       .post(voteEndpoint, payload, {

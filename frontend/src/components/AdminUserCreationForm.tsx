@@ -42,7 +42,7 @@ const AdminUserCreationForm: React.FC = () => {
     }
 
     try {
-        const response = await axiosInstance.post('/admin/createuser', formData);
+        const response = await axiosInstance.post('/users/admin/create', formData);
   
         if (response.status === 200) {
             setSuccessMessage('User creation successful');

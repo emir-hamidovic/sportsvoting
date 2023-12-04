@@ -31,11 +31,11 @@ function App() {
         <Route element={<PersistLogin />}>
           <Route path="/results/:pollId" element={<Results />} />
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
-            <Route path="/quiz/:pollId" element={<TableData endpoint='/quiz'/>} />
+            <Route path="/poll/:pollId" element={<TableData endpoint='/polls/players/get'/>} />
           </Route>
 
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
-            <Route path="/create-quiz" element={<QuizCreationPage />} />
+            <Route path="/create-poll" element={<QuizCreationPage />} />
           </Route>
 
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>

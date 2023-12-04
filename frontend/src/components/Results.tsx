@@ -14,7 +14,7 @@ const Results = () => {
     const [data, setData] = useState<Votes[]>([]);
     const fetchData = useCallback(async () => {
         try {
-            const response = await axiosInstance.get<Votes[]>(`/playervotes/${pollId}`);
+            const response = await axiosInstance.get<Votes[]>(`/votes/players/${pollId}`);
             if (response.data === null) {
                 setData([])
             } else {
