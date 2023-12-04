@@ -15,7 +15,6 @@ interface AuthContextType {
     setPersist: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-// Create the AuthContext with the specified type
 const AuthContext = createContext<AuthContextType>({
     auth: {user: "", pwd: "", accessToken: "", id: 0, roles: []},
     setAuth: () => {},

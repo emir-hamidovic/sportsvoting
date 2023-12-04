@@ -30,9 +30,13 @@ type PollsHandler struct {
 	DB database.Database
 }
 
+func parseID(r *http.Request, key string) (int64, error) {
+	pollId := mux.Vars(r)[key]
+	return strconv.ParseInt(pollId, 10, 64)
+}
+
 func (p PollsHandler) GetPlayerStatsForPoll(w http.ResponseWriter, r *http.Request) {
-	pollId := mux.Vars(r)["pollid"]
-	id, err := strconv.ParseInt(pollId, 10, 64)
+	id, err := parseID(r, "pollid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -71,8 +75,7 @@ func (p PollsHandler) GetPlayerStatsForPoll(w http.ResponseWriter, r *http.Reque
 }
 
 func (p PollsHandler) GetPollById(w http.ResponseWriter, r *http.Request) {
-	pollId := mux.Vars(r)["pollid"]
-	id, err := strconv.ParseInt(pollId, 10, 64)
+	id, err := parseID(r, "pollid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -100,8 +103,6 @@ func (p PollsHandler) getPollByID(id int64) (Poll, error) {
 }
 
 func (p PollsHandler) GetPolls(w http.ResponseWriter, r *http.Request) {
-	var polls []Poll
-
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -112,6 +113,7 @@ func (p PollsHandler) GetPolls(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
+	var polls []Poll
 	for rows.Next() {
 		var poll Poll
 		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season, &poll.UserID)
@@ -216,9 +218,7 @@ func (p PollsHandler) UpdatePoll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p PollsHandler) DeletePollByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr := vars["pollid"]
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := parseID(r, "pollid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -321,8 +321,7 @@ func (p PollsHandler) ResetPollVotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p PollsHandler) GetUserPolls(w http.ResponseWriter, r *http.Request) {
-	userId := mux.Vars(r)["userid"]
-	id, err := strconv.ParseInt(userId, 10, 64)
+	id, err := parseID(r, "userid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

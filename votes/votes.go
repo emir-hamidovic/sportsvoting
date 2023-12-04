@@ -114,7 +114,6 @@ func (v VotesHandler) TeamVotes(w http.ResponseWriter, r *http.Request) {}
 func (v VotesHandler) InsertPlayerVotes(w http.ResponseWriter, r *http.Request) {
 	var payload VotePayload
 
-	// Decode the JSON request body into the VotePayload struct
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -5,18 +5,18 @@ import { Button } from "react-bootstrap";
 import useAuth from "../hooks/use-auth";
 
 const HomePage = () => {
-  const navigate = useNavigate();
-  const {auth} = useAuth();
-  return (
-    <div className="App">
-        <Polls />
-        {auth.user ? <Box textAlign="center" mt={1}>
-            <Button variant="contained" color="primary" onClick={() => navigate("/create-poll")}>
-            Create New Poll
-            </Button>
-        </Box> : ''}
-    </div>
-  );
+	const navigate = useNavigate();
+	const {auth} = useAuth();
+	return (
+		<div className="App">
+			<Polls />
+			{auth.user ? <Box textAlign="center" mt={1}>
+				<Button variant="contained" color="primary" onClick={() => navigate("/create-poll")}>
+				Create New Poll
+				</Button>
+			</Box> : ''}
+		</div>
+	);
 };
 
 export default HomePage;

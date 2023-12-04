@@ -100,7 +100,7 @@ func validateToken(tokenString, publickey string) (*jwt.Token, error) {
 }
 
 func (u UsersHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
-	user, pwd, ok := r.BasicAuth()
+	username, password, ok := r.BasicAuth()
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("missing user/pwd"))
@@ -116,33 +116,40 @@ func (u UsersHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err := u.createNewUser(username, password, register.Email)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Register successful"))
+}
+
+func (u UsersHandler) createNewUser(username, password, email string) error {
 	var userDB User
-	err := u.DB.GetUserByUsername(user).Scan(&userDB.ID, &userDB.Username, &userDB.Email, &userDB.Password, &userDB.RefreshToken, &userDB.ProfilePic)
+	err := u.DB.GetUserByUsername(username).Scan(&userDB.ID, &userDB.Username, &userDB.Email, &userDB.Password, &userDB.RefreshToken, &userDB.ProfilePic)
 	if err == sql.ErrNoRows {
-		hash, _ := hashPassword(pwd)
-		res, err := u.DB.InsertNewUser(user, register.Email, hash, "")
+		hash, _ := hashPassword(password)
+		res, err := u.DB.InsertNewUser(username, email, hash, "")
 		if err != nil {
-			fmt.Println("error inserting user", err)
+			return err
 		}
 
 		userid, _ := res.LastInsertId()
 
 		_, err = u.DB.InsertUserRoles(userid, UserRoleUser)
 		if err != nil {
-			fmt.Println("error inserting user roles", err)
+			return err
 		}
 	} else if err != nil {
-		fmt.Println("error inserting user", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return err
 	} else if userDB.Username != "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("user already exists"))
-		return
+		return errors.New("user already exists")
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Register successful"))
+	return nil
 }
 
 func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
@@ -206,23 +213,25 @@ func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	type Response struct {
-		Id          int64  `json:"id"`
-		AccessToken string `json:"access_token"`
-		Role        string `json:"roles"`
-	}
-
-	var res Response
-	res.Id = userDB.ID
-	res.AccessToken = accessToken
-	res.Role = role
-	jsonRes, err := json.Marshal(res)
+	jsonResp, err := u.returnTokenAndRoleOfUser(userDB.ID, accessToken, role, "")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println("Error marshaling json")
 	}
 
-	w.Write(jsonRes)
+	w.Write(jsonResp)
+}
+
+func (u UsersHandler) returnTokenAndRoleOfUser(id int64, accessToken, roles, username string) ([]byte, error) {
+	type Response struct {
+		ID          int64  `json:"id"`
+		AccessToken string `json:"access_token"`
+		Username    string `json:"user"`
+		Roles       string `json:"roles"`
+	}
+	resp := Response{ID: id, Username: username, AccessToken: accessToken, Roles: roles}
+
+	return json.Marshal(resp)
 }
 
 func (u UsersHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
@@ -308,15 +317,13 @@ func (u UsersHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			type Response struct {
-				ID          int64  `json:"id"`
-				Username    string `json:"user"`
-				AccessToken string `json:"access_token"`
-				Roles       string `json:"roles"`
+			resp, err := u.returnTokenAndRoleOfUser(user.ID, accessToken, currentRoles, user.Username)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
-			resp := Response{ID: user.ID, Username: user.Username, AccessToken: accessToken, Roles: currentRoles}
 
-			json.NewEncoder(w).Encode(resp)
+			w.Write(resp)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
@@ -590,27 +597,10 @@ func (u UsersHandler) CreateUserAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user User
-	err := u.DB.GetUserByUsername(reqUser.Username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &user.ProfilePic)
-	if err == sql.ErrNoRows {
-		hash, _ := hashPassword(reqUser.Password)
-		res, err := u.DB.InsertNewUser(reqUser.Username, reqUser.Email, hash, "")
-		if err != nil {
-			fmt.Println("error inserting user", err)
-		}
-
-		userid, _ := res.LastInsertId()
-		_, err = u.DB.InsertUserRoles(userid, UserRoleUser)
-		if err != nil {
-			fmt.Println("error inserting user roles", err)
-		}
-	} else if err != nil {
-		fmt.Println("error inserting user", err)
+	err := u.createNewUser(reqUser.Username, reqUser.Password, reqUser.Email)
+	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
-		return
-	} else if user.Username != "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("user already exists"))
 		return
 	}
 

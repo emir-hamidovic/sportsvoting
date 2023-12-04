@@ -1,241 +1,237 @@
 .header {
-  background-color:#FFCE32;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 80px;
-  padding: 0 40px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	background-color:#FFCE32;
+	color: white;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 80px;
+	padding: 0 40px;
+	font-family: 'Montserrat', sans-serif;
+	font-size: 14px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-  
+	
 .title {
-  font-weight: bold;
+	font-weight: bold;
 }
 
 .logo {
-  font-weight: bold;
-  font-size: 24px;
-  text-transform: uppercase;
+	font-weight: bold;
+	font-size: 24px;
+	text-transform: uppercase;
 }
 
 .header-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
+	display: flex;
+	gap: 16px;
+	justify-content: center;
 }
 
 .header-buttons a {
-  display: block;
-  padding: 12px 24px;
-  border-radius: 25px;
-  border: none;
-  color: #fff;
-  background-color: #1D63FF;
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
+	display: block;
+	padding: 12px 24px;
+	border-radius: 25px;
+	border: none;
+	color: #fff;
+	background-color: #1D63FF;
+	transition: all 0.2s ease-in-out;
+	cursor: pointer;
 }
 
 .header-buttons a:hover {
-  background-color: #105bfd;
+	background-color: #105bfd;
 }
 
 .header-buttons a:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
 }
 
 .polls {
-  background-color: #f9f9f9;
-  padding: 20px;
+	background-color: #f9f9f9;
+	padding: 20px;
 }
 
 .poll {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background-color: white;
+	padding: 10px;
+	margin-bottom: 10px;
+	font-family: 'Montserrat', sans-serif;
+	font-size: 14px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	transition: all 0.3s ease;
 }
 
 .poll:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+	transform: translateY(-5px);
+	box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
 }
 
 .poll img {
-  width: 100px;
-  height: 100px;
-  margin-right: 10px;
+	width: 100px;
+	height: 100px;
+	margin-right: 10px;
 }
 
 .poll-details {
-  flex: 1;
+	flex: 1;
 }
 
 .poll-details h2 {
-  margin-top: 0;
-  margin-bottom: 5px;
+	margin-top: 0;
+	margin-bottom: 5px;
 }
 
 .poll-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
 }
 
 .poll-actions button {
-  margin-top: 10px;
-  padding: 5px 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  transition: all 0.3s ease;
+	margin-top: 10px;
+	padding: 5px 10px;
+	background-color: #007bff;
+	color: white;
+	border: none;
+	cursor: pointer;
+	font-family: 'Montserrat', sans-serif;
+	font-size: 14px;
+	transition: all 0.3s ease;
 }
 
 .poll-actions button:hover {
-  background-color: #0069d9;
+	background-color: #0069d9;
 }
 
 .vote-button, .results-button {
-  font-size: 24px;
-  padding: 12px 24px;
-  border-radius: 25px;
-  border: none;
-  color: #fff;
-  background-color: #1D63FF;
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
-  width: 120px;
+	font-size: 24px;
+	padding: 12px 24px;
+	border-radius: 25px;
+	border: none;
+	color: #fff;
+	background-color: #1D63FF;
+	transition: all 0.2s ease-in-out;
+	cursor: pointer;
+	width: 120px;
 }
 
 .vote-button:hover, .results-button:hover {
-  background-color: #0069d9;
+	background-color: #0069d9;
 }
 
 .vote-button:focus, .results-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
 }
 
 section {
-  width: 100%;
-  max-width: 420px;
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  padding: 1rem;
-  background-color: rgba(0,0,0,0.4);
+	width: 100%;
+	max-width: 420px;
+	min-height: 400px;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	padding: 1rem;
+	background-color: rgba(0,0,0,0.4);
 }
 
 form {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  flex-grow: 1;
-  padding-bottom: 1rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	flex-grow: 1;
+	padding-bottom: 1rem;
 }
 
 a, a:visited {
-  color: #fff;
+	color: #fff;
 }
 
-input[type="text"],
-input[type="password"],
-button,
-textarea {
-font-family: 'Nunito', sans-serif;
-font-size: 22px;
-padding: 0.25rem;
-border-radius: 0.5rem;
+input[type="text"], input[type="password"], button, textarea {
+	font-family: 'Nunito', sans-serif;
+	font-size: 22px;
+	padding: 0.25rem;
+	border-radius: 0.5rem;
 }
 
-label,
-button {
-margin-top: 1rem;
+label,button {
+	margin-top: 1rem;
 }
 
 button {
-padding: 0.5rem;
+	padding: 0.5rem;
 }
 
 .instructions {
-  font-size: 0.75rem;
-  border-radius: 0.5rem;
-  background: #000;
-  color: #fff;
-  padding: 0.25rem;
-  position: relative;
-  bottom: -10px;
+	font-size: 0.75rem;
+	border-radius: 0.5rem;
+	background: #000;
+	color: #fff;
+	padding: 0.25rem;
+	position: relative;
+	bottom: -10px;
 }
 
 .instructions > svg {
-  margin-right: 0.25rem;
+	margin-right: 0.25rem;
 }
 
 .offscreen {
-  position: absolute;
-  left: -9999px;
+	position: absolute;
+	left: -9999px;
 }
 
 .hide {
-  display: none;
+	display: none;
 }
 
 .valid {
-  color: limegreen;
-  margin-left: 0.25rem;
+	color: limegreen;
+	margin-left: 0.25rem;
 }
 
 .invalid {
-  color: red;
-  margin-left: 0.25rem;
+	color: red;
+	margin-left: 0.25rem;
 }
 
 .errmsg {
-  background-color: lightpink;
-  color: firebrick;
-  font-weight: bold;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
+	background-color: lightpink;
+	color: firebrick;
+	font-weight: bold;
+	padding: 0.5rem;
+	margin-bottom: 0.5rem;
 }
 
 .line {
-  display: inline-block;
+	display: inline-block;
 }
 
 @media only screen and (max-width: 768px) {
-  .header {
-    height: 60px;
-    padding: 0 20px;
-  }
+	.header {
+		height: 60px;
+		padding: 0 20px;
+	}
 
-  .logo {
-    font-size: 20px;
-  }
+	.logo {
+		font-size: 20px;
+	}
 
-  .header-buttons {
-    gap: 8px;
-  }
+	.header-buttons {
+		gap: 8px;
+	}
 
-  .header-buttons a {
-    font-size: 12px;
-    padding: 10px 20px;
-  }
+	.header-buttons a {
+		font-size: 12px;
+		padding: 10px 20px;
+	}
 
-  .vote-button, .results-button {
-    font-size: 18px;
-    padding: 10px 20px;
-  }
+	.vote-button, .results-button {
+		font-size: 18px;
+		padding: 10px 20px;
+	}
 }

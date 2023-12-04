@@ -4,41 +4,41 @@ import PieChart from "./ChartPie";
 import axiosInstance from "../utils/axios-instance";
 
 interface Votes {
-    value: number,
-    name: string,
-    pollname: string
+	value: number,
+	name: string,
+	pollname: string
   }
 
 const Results = () => {
-    const { pollId } = useParams();
-    const [data, setData] = useState<Votes[]>([]);
-    const fetchData = useCallback(async () => {
-        try {
-            const response = await axiosInstance.get<Votes[]>(`/votes/players/${pollId}`);
-            if (response.data === null) {
-                setData([])
-            } else {
-                setData(response.data);
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
-    }, [pollId]);
+	const { pollId } = useParams();
+	const [data, setData] = useState<Votes[]>([]);
+	const fetchData = useCallback(async () => {
+		try {
+			const response = await axiosInstance.get<Votes[]>(`/votes/players/${pollId}`);
+			if (response.data === null) {
+				setData([])
+			} else {
+				setData(response.data);
+			}
+		} catch (error) {
+			console.error('Error fetching data:', error);
+		}
+	}, [pollId]);
 
-    useEffect(() => {
-        fetchData();
-        const intervalId = setInterval(() => {
-            fetchData();
-        }, 2000);
+	useEffect(() => {
+		fetchData();
+		const intervalId = setInterval(() => {
+			fetchData();
+		}, 2000);
 
-        return () => clearInterval(intervalId);
-    }, [fetchData]);
+		return () => clearInterval(intervalId);
+	}, [fetchData]);
 
-    return (
-    <div>
-        <PieChart data={data}/>
-    </div>
-    )
+	return (
+	<div>
+		<PieChart data={data}/>
+	</div>
+	)
 }
 
 export default Results

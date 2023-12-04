@@ -1,36 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export interface Item {
-  id: number;
+	id: number;
 }
 
 export interface SelectionHook {
-  handleDeselectOne: (item: string) => void;
-  handleSelectOne: (item: string) => void;
-  selected: string[];
+	handleDeselectOne: (item: string) => void;
+	handleSelectOne: (item: string) => void;
+	selected: string[];
 }
 
 export const useSelection = (items: string[] = []): SelectionHook => {
-  const [selected, setSelected] = useState<string[]>([]);
+	const [selected, setSelected] = useState<string[]>([]);
 
-  useEffect(() => {
-    setSelected([]);
-  }, [items]);
+	useEffect(() => {
+		setSelected([]);
+	}, [items]);
 
-  const handleSelectOne = useCallback((item: string) => {
-      setSelected([item]);
-  }, []);
+	const handleSelectOne = useCallback((item: string) => {
+			setSelected([item]);
+	}, []);
 
 
-  const handleDeselectOne = useCallback((item: string) => {
-    setSelected((prevState) => {
-      return prevState.filter((_item) => _item !== item);
-    });
-  }, []);
+	const handleDeselectOne = useCallback((item: string) => {
+		setSelected((prevState) => {
+			return prevState.filter((_item) => _item !== item);
+		});
+	}, []);
 
-  return {
-    handleDeselectOne,
-    handleSelectOne,
-    selected
-  };
+	return {
+		handleDeselectOne,
+		handleSelectOne,
+		selected
+	};
 };
