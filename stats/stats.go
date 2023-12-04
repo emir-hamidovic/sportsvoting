@@ -3,33 +3,14 @@ package stats
 import (
 	"fmt"
 	"sportsvoting/database"
+	"sportsvoting/databasestructs"
 	"sportsvoting/request"
 	"sportsvoting/scraper"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-type Stats struct {
-	PlayerID          string  `json:"playerid,omitempty"`
-	Games             int64   `json:"g,omitempty"`
-	GamesStarted      int64   `json:"gs,omitempty"`
-	Minutes           float64 `json:"mpg,omitempty"`
-	Points            float64 `json:"ppg,omitempty"`
-	Rebounds          float64 `json:"rpg,omitempty"`
-	Assists           float64 `json:"apg,omitempty"`
-	Steals            float64 `json:"spg,omitempty"`
-	Blocks            float64 `json:"bpg,omitempty"`
-	Turnovers         float64 `json:"topg,omitempty"`
-	FGPercentage      float64 `json:"fgpct,omitempty"`
-	ThreeFGPercentage float64 `json:"threefgpct,omitempty"`
-	FTPercentage      float64 `json:"ftpct,omitempty"`
-	Season            string  `json:"season,omitempty"`
-	Position          string  `json:"position,omitempty"`
-	TeamAbbr          string  `json:"team,omitempty"`
-	IsRookie          bool    `json:"rookie,omitempty"`
-}
-
-func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *Stats) {
+func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *databasestructs.PlayerStats) {
 	stats.Games = scraper.GetTDDataStatInt(row, "g")
 	stats.GamesStarted = scraper.GetTDDataStatInt(row, "gs")
 	stats.Minutes = scraper.GetTDDataStatFloat(row, "mp_per_g")
@@ -45,9 +26,9 @@ func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *Stat
 	stats.Season = season
 }
 
-func UpdateStats(db database.Database, stats Stats) error {
+func UpdateStats(db database.Database, stats databasestructs.PlayerStats) error {
 	fmt.Println(stats)
-	res, err := db.UpdateStats(stats.Games, stats.GamesStarted, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, stats.Position, stats.PlayerID, stats.TeamAbbr)
+	res, err := db.UpdateStats(stats)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -58,7 +39,7 @@ func UpdateStats(db database.Database, stats Stats) error {
 	}
 
 	if rows == 0 && stats.Season != "" {
-		_, err = db.InsertStats(stats.Games, stats.GamesStarted, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, stats.Position, stats.PlayerID, stats.TeamAbbr)
+		_, err = db.InsertStats(stats)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -81,10 +62,11 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 		if team == "TOT" {
 			id := request.GetPlayerIDFromDocument(row)
 
-			var stats Stats
+			var stats databasestructs.PlayerStats
 			FillPlayerStatsForSeason(row, season, &stats)
-			position := scraper.GetTDDataStatString(row, "pos")
-			_, err := db.UpdateTradedPlayerStats(stats.Games, stats.GamesStarted, stats.Minutes, stats.Points, stats.Rebounds, stats.Assists, stats.Steals, stats.Blocks, stats.Turnovers, stats.FGPercentage, stats.FTPercentage, stats.ThreeFGPercentage, stats.Season, position, id)
+			stats.Position = scraper.GetTDDataStatString(row, "pos")
+			stats.PlayerID = id
+			_, err := db.UpdateTradedPlayerStats(stats)
 			if err != nil {
 				fmt.Println(err)
 			}

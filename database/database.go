@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"sportsvoting/database/mysql_db"
+	"sportsvoting/databasestructs"
 )
 
 const (
@@ -12,57 +13,77 @@ const (
 )
 
 type Database interface {
-	CreateAdminUser() error
-	InsertSeasonEntered(season string) (sql.Result, error)
-	SelectSeasonsAvailable() (*sql.Rows, error)
-	InsertPlayer(playerid, name, college, teamabbr, height, weight string, age int64) (sql.Result, error)
+	PlayerOperations
+	TeamOperations
+	StatsOperations
+	PollOperations
+	UserOperations
+}
+
+type PlayerOperations interface {
+	InsertPlayer(info databasestructs.PlayerInfo) (sql.Result, error)
 	UpdatePlayerAge(playerid string, age int64) (sql.Result, error)
-	InsertTeam(teamabbr, name, logo string, winlosspct float64, playoffs, divtitles, conftitles, championships int64) (sql.Result, error)
-	UpdateStats(gp, gs int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid, teamabbr string) (sql.Result, error)
-	InsertStats(gp, gs int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid, teamabbr string) (sql.Result, error)
-	UpdateTradedPlayerStats(gp, gs int64, mpg, ppg, rpg, apg, spg, bpg, tpg, fg, ft, three float64, season, position, playerid string) (sql.Result, error)
-	UpdateAdvancedStats(per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg float64, teamabbr, playerid, season string) (sql.Result, error)
-	UpdateTradedPlayerAdvancedStats(per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp float64, season, playerid string) (sql.Result, error)
-	InsertAdvancedStats(per, tspct, usgpct, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg float64, season, playerid, teamabbr string) (sql.Result, error)
-	UpdateOffAndDefRtg(offrtg, defrtg float64, playerid, season string) (sql.Result, error)
-	UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error)
 	SelectPlayerGamesPlayed(season string) (*sql.Rows, error)
 	CheckPlayerExists(playerid string) *sql.Row
+}
+
+type TeamOperations interface {
+	InsertTeam(info databasestructs.TeamInfo) (sql.Result, error)
+	UpdateTeamForPlayer(teamabbr, playerid string) (sql.Result, error)
 	SelectTeamByAbbrevation(teamabbr string) *sql.Row
-	GetPlayerStatsForPoll(ctx context.Context, season string) (*sql.Rows, error)
+}
+
+type StatsOperations interface {
+	UpdateStats(stats databasestructs.PlayerStats) (sql.Result, error)
+	InsertStats(stats databasestructs.PlayerStats) (sql.Result, error)
+	UpdateTradedPlayerStats(stats databasestructs.PlayerStats) (sql.Result, error)
+	UpdateAdvancedStats(stats databasestructs.AdvancedStats) (sql.Result, error)
+	UpdateTradedPlayerAdvancedStats(stats databasestructs.AdvancedStats) (sql.Result, error)
+	InsertAdvancedStats(stats databasestructs.AdvancedStats) (sql.Result, error)
+	UpdateOffAndDefRtg(offrtg, defrtg float64, playerid, season string) (sql.Result, error)
 	GetSixManStats(ctx context.Context, season string) (*sql.Rows, error)
 	GetDPOYStats(ctx context.Context, season string) (*sql.Rows, error)
 	GetROYStats(ctx context.Context, season string) (*sql.Rows, error)
 	SetRookieStatus(id string) (sql.Result, error)
+}
+
+type PollOperations interface {
 	GetPolls(ctx context.Context) (*sql.Rows, error)
 	GetPollByID(id int64) *sql.Row
 	GetPollByUserID(userid int64) (*sql.Rows, error)
-	InsertPolls(name, description, image, selected_stats, season string, userid int64) (sql.Result, error)
-	InsertPollsWithId(id int64, name, description, image, selected_stats, season string, userid int64) (sql.Result, error)
-	GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
-	InsertPlayerVotes(pollid, userid int64, playerid string) (sql.Result, error)
+	InsertPolls(poll databasestructs.Poll) (sql.Result, error)
+	InsertPollsWithId(poll databasestructs.Poll) (sql.Result, error)
 	DeletePollByID(pollid int64) (sql.Result, error)
 	ResetPollVotes(pollid int64) (sql.Result, error)
-	UpdatePollByID(name, description, selected_stats, season string, pollid int64) (sql.Result, error)
+	UpdatePollByID(poll databasestructs.Poll) (sql.Result, error)
+	InsertSeasonEntered(season string) (sql.Result, error)
+	SelectSeasonsAvailable() (*sql.Rows, error)
+	GetPlayerStatsForPoll(ctx context.Context, season string) (*sql.Rows, error)
+	GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
+	InsertPlayerVotes(pollid, userid int64, playerid string) (sql.Result, error)
 	GetTeamPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
+	UpdatePollImage(image databasestructs.Image) (sql.Result, error)
+}
+
+type UserOperations interface {
 	GetUserByUsername(username string) *sql.Row
 	GetUserByRefreshToken(refresh_token string) *sql.Row
 	GetUserByID(id int64) *sql.Row
 	GetUserRolesByID(id int64) *sql.Row
-	InsertUserRoles(userid int64, role string) (sql.Result, error)
+	InsertUserRoles(role databasestructs.Role) (sql.Result, error)
 	UpdateUserRoles(roles string, user_id int64) (sql.Result, error)
-	GetCurrentProfilePic(id int64) *sql.Row
-	InsertNewUser(username, email, password, refresh_token string) (sql.Result, error)
+	InsertNewUser(user databasestructs.User) (sql.Result, error)
 	UpdateUserRefreshToken(username, refresh_token string) (sql.Result, error)
 	UpdateUserIsAdmin(username string, is_admin bool) (sql.Result, error)
 	UpdateUserPassword(username, password string) (sql.Result, error)
 	UpdateUserEmail(username, email string) (sql.Result, error)
 	UpdateUserUsername(oldusername, username string) (sql.Result, error)
 	UpdateUserProfilePic(username, profile_pic string) (sql.Result, error)
-	UpdatePollImage(pollId int64, pollImage string) (sql.Result, error)
 	DeleteUser(id int64) (sql.Result, error)
 	GetAllUsers() (*sql.Rows, error)
 	GetVotesOfUser(ctx context.Context, userid int64) (*sql.Rows, error)
+	CreateAdminUser() error
+	GetCurrentProfilePic(id int64) *sql.Row
 }
 
 type Config struct {

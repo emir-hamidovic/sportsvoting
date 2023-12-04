@@ -3,31 +3,14 @@ package advancedstats
 import (
 	"fmt"
 	"sportsvoting/database"
+	"sportsvoting/databasestructs"
 	"sportsvoting/request"
 	"sportsvoting/scraper"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-type AdvancedStats struct {
-	PlayerID string  `json:"stats,omitempty"`
-	TeamAbbr string  `json:"team,omitempty"`
-	Season   string  `json:"season,omitempty"`
-	PER      float64 `json:"per,omitempty"`
-	TSPct    float64 `json:"ts,omitempty"`
-	USGPCt   float64 `json:"usg,omitempty"`
-	OffWS    float64 `json:"ows,omitempty"`
-	DefWS    float64 `json:"dws,omitempty"`
-	WS       float64 `json:"ws,omitempty"`
-	OffBPM   float64 `json:"obpm,omitempty"`
-	DefBPM   float64 `json:"dbpm,omitempty"`
-	BPM      float64 `json:"bpm,omitempty"`
-	VORP     float64 `json:"vorp,omitempty"`
-	DefRtg   float64 `json:"defrtg,omitempty"`
-	OffRtg   float64 `json:"offrtg,omitempty"`
-}
-
-func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *AdvancedStats) {
+func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *databasestructs.AdvancedStats) {
 	stats.PER = scraper.GetTDDataStatFloat(row, "per")
 	stats.TSPct = scraper.GetTDDataStatFloat(row, "ts_pct")
 	stats.USGPCt = scraper.GetTDDataStatFloat(row, "usg_pct")
@@ -41,10 +24,10 @@ func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *Adva
 	stats.Season = season
 }
 
-func UpdateStats(db database.Database, stats AdvancedStats) error {
+func UpdateStats(db database.Database, stats databasestructs.AdvancedStats) error {
 	// Problem with update, check this
 	fmt.Println(stats)
-	res, err := db.UpdateAdvancedStats(stats.PER, stats.TSPct, stats.USGPCt, stats.OffWS, stats.DefWS, stats.WS, stats.OffBPM, stats.DefBPM, stats.BPM, stats.VORP, stats.OffRtg, stats.DefRtg, stats.TeamAbbr, stats.PlayerID, stats.Season)
+	res, err := db.UpdateAdvancedStats(stats)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -57,7 +40,7 @@ func UpdateStats(db database.Database, stats AdvancedStats) error {
 
 	if rows == 0 && stats.Season != "" {
 		fmt.Println("insert advanced", stats)
-		_, err = db.InsertAdvancedStats(stats.PER, stats.TSPct, stats.USGPCt, stats.OffWS, stats.DefWS, stats.WS, stats.OffBPM, stats.DefBPM, stats.BPM, stats.VORP, stats.OffRtg, stats.DefRtg, stats.TeamAbbr, stats.PlayerID, stats.Season)
+		_, err = db.InsertAdvancedStats(stats)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -80,9 +63,10 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 		if team == "TOT" {
 			id := request.GetPlayerIDFromDocument(row)
 
-			var stats AdvancedStats
+			var stats databasestructs.AdvancedStats
 			FillPlayerStatsForSeason(row, season, &stats)
-			_, err := db.UpdateTradedPlayerAdvancedStats(stats.PER, stats.TSPct, stats.USGPCt, stats.OffWS, stats.DefWS, stats.WS, stats.OffBPM, stats.DefBPM, stats.BPM, stats.VORP, stats.Season, id)
+			stats.PlayerID = id
+			_, err := db.UpdateTradedPlayerAdvancedStats(stats)
 			if err != nil {
 				fmt.Println(err)
 			}

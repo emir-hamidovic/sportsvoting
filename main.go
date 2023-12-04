@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"sportsvoting/database"
+	"sportsvoting/databasestructs"
 	"sportsvoting/players"
 	"sportsvoting/polls"
 	"sportsvoting/teams"
@@ -110,15 +111,15 @@ func main() {
 		}
 	}()
 
-	pollsInsert := []polls.Poll{
+	pollsInsert := []databasestructs.Poll{
 		{ID: 1, Name: "MVP", Description: "Description for MVP", Image: "mvp-trophy.jpg", SelectedStats: "All stats", Season: "2023", UserID: 1},
 		{ID: 2, Name: "ROY", Description: "Description for ROY", Image: "roy-trophy.jpeg", SelectedStats: "Rookie", Season: "2023", UserID: 1},
 		{ID: 3, Name: "DPOY", Description: "Description for DPOY", Image: "dpoy-trophy.jpeg", SelectedStats: "Defensive", Season: "2023", UserID: 1},
 		{ID: 4, Name: "Sixth Man", Description: "Description for 6-man", Image: "6moy-trophy.jpeg", SelectedStats: "Sixth man", Season: "2023", UserID: 1},
 	}
 
-	for _, val := range pollsInsert {
-		db.InsertPollsWithId(val.ID, val.Name, val.Description, val.Image, val.SelectedStats, val.Season, val.UserID)
+	for _, poll := range pollsInsert {
+		db.InsertPollsWithId(poll)
 	}
 
 	usersHandler := users.UsersHandler{DB: db}

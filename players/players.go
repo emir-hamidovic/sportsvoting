@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sportsvoting/advancedstats"
 	"sportsvoting/database"
+	"sportsvoting/databasestructs"
 	"sportsvoting/request"
 	"sportsvoting/scraper"
 	"sportsvoting/stats"
@@ -13,19 +14,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type Player struct {
-	Name                        string `json:"name,omitempty"`
-	ID                          string `json:"playerid,omitempty"`
-	College                     string `json:"college,omitempty"`
-	TeamAbbr                    string `json:"team,omitempty"`
-	Height                      string `json:"height,omitempty"`
-	Weight                      string `json:"weight,omitempty"`
-	Age                         int64  `json:"age,omitempty"`
-	stats.Stats                 `json:"stats,omitempty"`
-	advancedstats.AdvancedStats `json:"advstats,omitempty"`
-}
-
-func GetPlayerInfo(doc *goquery.Document, team string, playersList map[string]Player, season string) (map[string]Player, error) {
+func GetPlayerInfo(doc *goquery.Document, team string, playersList map[string]databasestructs.PlayerInfo, season string) (map[string]databasestructs.PlayerInfo, error) {
 	playersList, err := getRosterInfo(doc, team, playersList)
 	if err != nil {
 		return nil, err
@@ -50,9 +39,9 @@ func GetPlayerInfo(doc *goquery.Document, team string, playersList map[string]Pl
 	return playersList, nil
 }
 
-func InsertPlayers(db database.Database, players map[string]Player) error {
+func InsertPlayers(db database.Database, players map[string]databasestructs.PlayerInfo) error {
 	for _, player := range players {
-		_, err := db.InsertPlayer(player.ID, player.Name, player.College, player.TeamAbbr, player.Height, player.Weight, player.Age)
+		_, err := db.InsertPlayer(player)
 		if err != nil {
 			return err
 		}
@@ -61,7 +50,7 @@ func InsertPlayers(db database.Database, players map[string]Player) error {
 	fmt.Println("Players added to database.")
 	return nil
 }
-func getRosterInfo(doc *goquery.Document, team string, player map[string]Player) (map[string]Player, error) {
+func getRosterInfo(doc *goquery.Document, team string, player map[string]databasestructs.PlayerInfo) (map[string]databasestructs.PlayerInfo, error) {
 	rows := doc.Find("table#roster > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
 		name := scraper.GetTDDataStatString(row, "player")
@@ -72,20 +61,20 @@ func getRosterInfo(doc *goquery.Document, team string, player map[string]Player)
 			weight := scraper.GetTDDataStatString(row, "weight")
 			position := scraper.GetTDDataStatString(row, "pos")
 
-			player[id] = Player{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team, Stats: stats.Stats{Position: position, PlayerID: id, TeamAbbr: team}, AdvancedStats: advancedstats.AdvancedStats{PlayerID: id, TeamAbbr: team}}
+			player[id] = databasestructs.PlayerInfo{Name: name, ID: id, College: college, Height: height, Weight: weight, TeamAbbr: team, PlayerStats: databasestructs.PlayerStats{Position: position, PlayerID: id, TeamAbbr: team}, AdvancedStats: databasestructs.AdvancedStats{PlayerID: id, TeamAbbr: team}}
 		}
 	})
 
 	return player, nil
 }
 
-func getSeasonPerGameStats(doc *goquery.Document, player map[string]Player, season string) (map[string]Player, error) {
+func getSeasonPerGameStats(doc *goquery.Document, player map[string]databasestructs.PlayerInfo, season string) (map[string]databasestructs.PlayerInfo, error) {
 	rows := doc.Find("table#per_game > tbody > tr")
 	rows.Each(func(i int, row *goquery.Selection) {
 		pl := getPlayerAge(row)
 		if entry, ok := player[pl.ID]; ok {
 			entry.Age = pl.Age
-			stats.FillPlayerStatsForSeason(row, season, &entry.Stats)
+			stats.FillPlayerStatsForSeason(row, season, &entry.PlayerStats)
 			player[pl.ID] = entry
 		}
 	})
@@ -93,9 +82,9 @@ func getSeasonPerGameStats(doc *goquery.Document, player map[string]Player, seas
 	return player, nil
 }
 
-func getSeasonAdvancedStats(rows *goquery.Selection, player map[string]Player, season string) (map[string]Player, error) {
+func getSeasonAdvancedStats(rows *goquery.Selection, player map[string]databasestructs.PlayerInfo, season string) (map[string]databasestructs.PlayerInfo, error) {
 	rows.Each(func(i int, row *goquery.Selection) {
-		var pl Player
+		var pl databasestructs.PlayerInfo
 		pl.ID = request.GetPlayerIDFromDocument(row)
 		if entry, ok := player[pl.ID]; ok {
 			advancedstats.FillPlayerStatsForSeason(row, season, &entry.AdvancedStats)
@@ -106,7 +95,7 @@ func getSeasonAdvancedStats(rows *goquery.Selection, player map[string]Player, s
 	return player, nil
 }
 
-func getSeasonOffAndDefRtg(player map[string]Player, season string) (map[string]Player, error) {
+func getSeasonOffAndDefRtg(player map[string]databasestructs.PlayerInfo, season string) (map[string]databasestructs.PlayerInfo, error) {
 	url := fmt.Sprintf("https://www.basketball-reference.com/leagues/NBA_%s_per_poss.html", season)
 	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
@@ -127,8 +116,8 @@ func getSeasonOffAndDefRtg(player map[string]Player, season string) (map[string]
 	return player, nil
 }
 
-func getPlayerAge(row *goquery.Selection) Player {
-	var player Player
+func getPlayerAge(row *goquery.Selection) databasestructs.PlayerInfo {
+	var player databasestructs.PlayerInfo
 	player.ID = request.GetPlayerIDFromDocument(row)
 	player.Age = scraper.GetTDDataStatInt(row, "age")
 	return player
@@ -165,20 +154,20 @@ func UpdatePlayersWhoPlayedAGame(db database.Database) error {
 		return err
 	}
 
-	newplayers := make(map[string]Player, 500)
-	updateplayers := make(map[string]Player, 500)
+	newplayers := make(map[string]databasestructs.PlayerInfo, 500)
+	updateplayers := make(map[string]databasestructs.PlayerInfo, 500)
 	table := doc.Find("table#per_game_stats > tbody > tr")
 	table.Each(func(i int, row *goquery.Selection) {
 		id := request.GetPlayerIDFromDocument(row)
 		player := getPlayerAge(row)
-		player.Stats.PlayerID = id
+		player.PlayerStats.PlayerID = id
 		player.AdvancedStats.PlayerID = id
 		player.Name = scraper.GetTDDataStatString(row, "player")
-		player.Stats.Position = scraper.GetTDDataStatString(row, "pos")
+		player.PlayerStats.Position = scraper.GetTDDataStatString(row, "pos")
 		player.TeamAbbr = scraper.GetTDDataStatString(row, "team_id")
-		player.Stats.TeamAbbr = player.TeamAbbr
+		player.PlayerStats.TeamAbbr = player.TeamAbbr
 		player.AdvancedStats.TeamAbbr = player.TeamAbbr
-		stats.FillPlayerStatsForSeason(row, season, &player.Stats)
+		stats.FillPlayerStatsForSeason(row, season, &player.PlayerStats)
 
 		entry, ok := players[id]
 		if !ok && id != "" {
@@ -187,14 +176,14 @@ func UpdatePlayersWhoPlayedAGame(db database.Database) error {
 				newplayers[id] = player
 				players[id] = player.Games
 			} else {
-				err = stats.UpdateStats(db, player.Stats)
+				err = stats.UpdateStats(db, player.PlayerStats)
 				if err != nil {
 					fmt.Println(err)
 				}
 				updateplayers[id] = player
 			}
-		} else if player.Stats.Games > entry {
-			err = stats.UpdateStats(db, player.Stats)
+		} else if player.PlayerStats.Games > entry {
+			err = stats.UpdateStats(db, player.PlayerStats)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -203,7 +192,7 @@ func UpdatePlayersWhoPlayedAGame(db database.Database) error {
 
 		if entry, ok := newplayers[id]; ok {
 			entry.TeamAbbr = player.TeamAbbr
-			entry.Stats.TeamAbbr = player.TeamAbbr
+			entry.PlayerStats.TeamAbbr = player.TeamAbbr
 			entry.AdvancedStats.TeamAbbr = player.TeamAbbr
 			newplayers[id] = entry
 		}
@@ -259,10 +248,10 @@ func GetEndYearOfTheSeason() string {
 	return currentSeason
 }
 
-func UpdatePlayerStats(db database.Database, rosters map[string]Player, season string) error {
+func UpdatePlayerStats(db database.Database, rosters map[string]databasestructs.PlayerInfo, season string) error {
 	fmt.Println("Updating stats")
 	for _, player := range rosters {
-		err := stats.UpdateStats(db, player.Stats)
+		err := stats.UpdateStats(db, player.PlayerStats)
 		if err != nil {
 			return err
 		}

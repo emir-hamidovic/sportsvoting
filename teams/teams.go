@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sportsvoting/database"
+	"sportsvoting/databasestructs"
 	"sportsvoting/players"
 	"sportsvoting/request"
 	"sportsvoting/scraper"
@@ -13,24 +14,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type Teams struct {
-	TeamAbbr         string
-	Name             string
-	Logo             string
-	WinLossPct       float64
-	Playoffs         int64
-	DivisionTitles   int64
-	ConferenceTitles int64
-	Championships    int64
-}
-
-func ParseTeams(db database.Database, season string) (map[string]players.Player, error) {
+func ParseTeams(db database.Database, season string) (map[string]databasestructs.PlayerInfo, error) {
 	allTeams, err := ParseBasicInfoForEveryTeam()
 	if err != nil {
 		return nil, err
 	}
 
-	roster := make(map[string]players.Player, 600)
+	roster := make(map[string]databasestructs.PlayerInfo, 600)
 	for _, team := range allTeams {
 		url := fmt.Sprintf("https://www.basketball-reference.com/teams/%s/%s.html", team.TeamAbbr, season)
 		doc, err := request.GetDocumentFromURL(url)
@@ -46,7 +36,7 @@ func ParseTeams(db database.Database, season string) (map[string]players.Player,
 		team.Logo = scraper.GetTeamLogo(doc)
 		fmt.Println(team)
 
-		_, err = db.InsertTeam(team.TeamAbbr, team.Name, team.Logo, team.WinLossPct, team.Playoffs, team.DivisionTitles, team.ConferenceTitles, team.Championships)
+		_, err = db.InsertTeam(team)
 		if err != nil {
 			log.Println(err)
 		}
@@ -58,17 +48,17 @@ func ParseTeams(db database.Database, season string) (map[string]players.Player,
 	return roster, nil
 }
 
-func ParseBasicInfoForEveryTeam() ([]Teams, error) {
+func ParseBasicInfoForEveryTeam() ([]databasestructs.TeamInfo, error) {
 	url := "https://www.basketball-reference.com/teams"
 	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
 		return nil, err
 	}
 
-	return findBasicTeamInfo(doc, []Teams{}), nil
+	return findBasicTeamInfo(doc, []databasestructs.TeamInfo{}), nil
 }
 
-func findBasicTeamInfo(doc *goquery.Document, teams []Teams) []Teams {
+func findBasicTeamInfo(doc *goquery.Document, teams []databasestructs.TeamInfo) []databasestructs.TeamInfo {
 	rows := doc.Find("table#teams_active > tbody > tr.full_table")
 	rows.Each(func(i int, row *goquery.Selection) {
 		name := row.Find("th[data-stat='franch_name']").Text()
@@ -86,7 +76,7 @@ func findBasicTeamInfo(doc *goquery.Document, teams []Teams) []Teams {
 			conftitles := scraper.GetTDDataStatInt(row, "years_conference_champion")
 			championships := scraper.GetTDDataStatInt(row, "years_league_champion")
 
-			teams = append(teams, Teams{Name: name, TeamAbbr: abbr, WinLossPct: winlosspct * 100, Playoffs: playoffs, DivisionTitles: divtitles, ConferenceTitles: conftitles, Championships: championships})
+			teams = append(teams, databasestructs.TeamInfo{Name: name, TeamAbbr: abbr, WinLossPct: winlosspct * 100, Playoffs: playoffs, DivisionTitles: divtitles, ConferenceTitles: conftitles, Championships: championships})
 		}
 	})
 

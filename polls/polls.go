@@ -9,22 +9,12 @@ import (
 	"net/http"
 	"os"
 	"sportsvoting/database"
-	"sportsvoting/players"
+	"sportsvoting/databasestructs"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
 )
-
-type Poll struct {
-	ID            int64  `json:"id"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Image         string `json:"image"`
-	SelectedStats string `json:"selected_stats"`
-	Season        string `json:"season"`
-	UserID        int64  `json:"user_id,omitempty"`
-}
 
 type PollsHandler struct {
 	DB database.Database
@@ -51,7 +41,7 @@ func (p PollsHandler) GetPlayerStatsForPoll(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var players []players.Player
+	var players []databasestructs.PlayerInfo
 	switch poll.SelectedStats {
 	case "Defensive":
 		players, err = p.getDefensiveStats(ctx, poll.Season)
@@ -92,11 +82,11 @@ func (p PollsHandler) GetPollById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(poll)
 }
 
-func (p PollsHandler) getPollByID(id int64) (Poll, error) {
-	var poll Poll
+func (p PollsHandler) getPollByID(id int64) (databasestructs.Poll, error) {
+	var poll databasestructs.Poll
 	err := p.DB.GetPollByID(id).Scan(&poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season, &poll.UserID)
 	if err != nil {
-		return Poll{}, err
+		return databasestructs.Poll{}, err
 	}
 
 	return poll, nil
@@ -113,9 +103,9 @@ func (p PollsHandler) GetPolls(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var polls []Poll
+	var polls []databasestructs.Poll
 	for rows.Next() {
-		var poll Poll
+		var poll databasestructs.Poll
 		err := rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season, &poll.UserID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -136,7 +126,7 @@ func (p PollsHandler) GetPolls(w http.ResponseWriter, r *http.Request) {
 
 func (p PollsHandler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20) // 10 MB limit for file size
-	var poll Poll
+	var poll databasestructs.Poll
 	poll.Name = r.FormValue("name")
 	poll.Description = r.FormValue("description")
 	poll.Season = r.FormValue("season")
@@ -177,7 +167,7 @@ func (p PollsHandler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to copy file", http.StatusInternalServerError)
 		return
 	}
-	insertRes, err := p.DB.InsertPolls(poll.Name, poll.Description, poll.Image, poll.SelectedStats, poll.Season, poll.UserID)
+	insertRes, err := p.DB.InsertPolls(poll)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -190,20 +180,20 @@ func (p PollsHandler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p PollsHandler) UpdatePoll(w http.ResponseWriter, r *http.Request) {
-	var poll Poll
+	var poll databasestructs.Poll
 	if err := json.NewDecoder(r.Body).Decode(&poll); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var pollDB Poll
+	var pollDB databasestructs.Poll
 	err := p.DB.GetPollByID(poll.ID).Scan(&pollDB.Name, &pollDB.Description, &pollDB.Image, &pollDB.SelectedStats, &pollDB.Season, &pollDB.UserID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = p.DB.UpdatePollByID(poll.Name, poll.Description, poll.SelectedStats, poll.Season, poll.ID)
+	_, err = p.DB.UpdatePollByID(poll)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -257,7 +247,7 @@ func (p PollsHandler) UpdatePollImage(w http.ResponseWriter, r *http.Request) {
 	pollId := r.FormValue("pollId")
 	pollIdInt, _ := strconv.ParseInt(pollId, 10, 64)
 
-	var poll Poll
+	var poll databasestructs.Poll
 	var pollimage sql.NullString
 	err = p.DB.GetPollByID(pollIdInt).Scan(&poll.Name, &poll.Description, &pollimage, &poll.SelectedStats, &poll.Season, &poll.UserID)
 	if err != nil {
@@ -287,7 +277,8 @@ func (p PollsHandler) UpdatePollImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = p.DB.UpdatePollImage(pollIdInt, fileName)
+	img := databasestructs.Image{ID: pollIdInt, ImageURL: fileName}
+	_, err = p.DB.UpdatePollImage(img)
 	if err != nil {
 		http.Error(w, "Unable to update poll image", http.StatusInternalServerError)
 		return
@@ -338,15 +329,15 @@ func (p PollsHandler) GetUserPolls(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(polls)
 }
 
-func (p PollsHandler) getPollByUserID(userid int64) ([]Poll, error) {
+func (p PollsHandler) getPollByUserID(userid int64) ([]databasestructs.Poll, error) {
 	rows, err := p.DB.GetPollByUserID(userid)
 	if err != nil {
 		return nil, err
 	}
 
-	var polls []Poll
+	var polls []databasestructs.Poll
 	for rows.Next() {
-		var poll Poll
+		var poll databasestructs.Poll
 		err = rows.Scan(&poll.ID, &poll.Name, &poll.Description, &poll.Image, &poll.SelectedStats, &poll.Season)
 		if err != nil {
 			return nil, err
@@ -388,16 +379,16 @@ func (p PollsHandler) GetSeasons(w http.ResponseWriter, r *http.Request) {
 	w.Write(seasonsJson)
 }
 
-func (p PollsHandler) getRookieStats(ctx context.Context, season string) ([]players.Player, error) {
+func (p PollsHandler) getRookieStats(ctx context.Context, season string) ([]databasestructs.PlayerInfo, error) {
 	rows, err := p.DB.GetROYStats(ctx, season)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var playerList []players.Player
+	var playerList []databasestructs.PlayerInfo
 
 	for rows.Next() {
-		var p players.Player
+		var p databasestructs.PlayerInfo
 		err = rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.WS, &p.BPM, &p.OffRtg, &p.DefRtg)
 		if err != nil {
 			return nil, err
@@ -412,16 +403,16 @@ func (p PollsHandler) getRookieStats(ctx context.Context, season string) ([]play
 	return playerList, nil
 }
 
-func (p PollsHandler) getAllStats(ctx context.Context, season string) ([]players.Player, error) {
+func (p PollsHandler) getAllStats(ctx context.Context, season string) ([]databasestructs.PlayerInfo, error) {
 	rows, err := p.DB.GetPlayerStatsForPoll(ctx, season)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var playerList []players.Player
+	var playerList []databasestructs.PlayerInfo
 
 	for rows.Next() {
-		var p players.Player
+		var p databasestructs.PlayerInfo
 		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
 		if err != nil {
 			return nil, err
@@ -436,16 +427,16 @@ func (p PollsHandler) getAllStats(ctx context.Context, season string) ([]players
 	return playerList, nil
 }
 
-func (p PollsHandler) getSixmanStats(ctx context.Context, season string) ([]players.Player, error) {
+func (p PollsHandler) getSixmanStats(ctx context.Context, season string) ([]databasestructs.PlayerInfo, error) {
 	rows, err := p.DB.GetSixManStats(ctx, season)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var playerList []players.Player
+	var playerList []databasestructs.PlayerInfo
 
 	for rows.Next() {
-		var p players.Player
+		var p databasestructs.PlayerInfo
 		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
 		if err != nil {
 			return nil, err
@@ -460,16 +451,16 @@ func (p PollsHandler) getSixmanStats(ctx context.Context, season string) ([]play
 	return playerList, nil
 }
 
-func (p PollsHandler) getDefensiveStats(ctx context.Context, season string) ([]players.Player, error) {
+func (p PollsHandler) getDefensiveStats(ctx context.Context, season string) ([]databasestructs.PlayerInfo, error) {
 	rows, err := p.DB.GetDPOYStats(ctx, season)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var playerList []players.Player
+	var playerList []databasestructs.PlayerInfo
 	for rows.Next() {
-		var p players.Player
+		var p databasestructs.PlayerInfo
 		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Rebounds, &p.Steals, &p.Blocks, &p.Position, &p.DefWS, &p.DefBPM, &p.DefRtg)
 		if err != nil {
 			return nil, err

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"sportsvoting/database"
+	"sportsvoting/databasestructs"
 	"strconv"
 	"strings"
 	"time"
@@ -23,15 +24,6 @@ const (
 	UserRoleAdmin string = "admin"
 	UserRoleUser  string = "user"
 )
-
-type User struct {
-	ID           int64  `json:"id,omitempty"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
-	Password     string `json:"password"`
-	RefreshToken string `json:"refresh_token"`
-	ProfilePic   string `json:"profile_pic"`
-}
 
 type UsersHandler struct {
 	DB database.Database
@@ -128,24 +120,26 @@ func (u UsersHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u UsersHandler) createNewUser(username, password, email string) error {
-	var userDB User
-	err := u.DB.GetUserByUsername(username).Scan(&userDB.ID, &userDB.Username, &userDB.Email, &userDB.Password, &userDB.RefreshToken, &userDB.ProfilePic)
+	var user databasestructs.User
+	err := u.DB.GetUserByUsername(username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &user.ProfilePic)
 	if err == sql.ErrNoRows {
 		hash, _ := hashPassword(password)
-		res, err := u.DB.InsertNewUser(username, email, hash, "")
+		userDb := databasestructs.User{Username: username, Email: email, Password: hash}
+		res, err := u.DB.InsertNewUser(userDb)
 		if err != nil {
 			return err
 		}
 
 		userid, _ := res.LastInsertId()
 
-		_, err = u.DB.InsertUserRoles(userid, UserRoleUser)
+		roles := databasestructs.Role{UserID: userid, Role: UserRoleUser}
+		_, err = u.DB.InsertUserRoles(roles)
 		if err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
-	} else if userDB.Username != "" {
+	} else if user.Username != "" {
 		return errors.New("user already exists")
 	}
 
@@ -160,7 +154,7 @@ func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userDB User
+	var userDB databasestructs.User
 	var match bool
 	err := u.DB.GetUserByUsername(user).Scan(&userDB.ID, &userDB.Username, &userDB.Email, &userDB.Password, &userDB.RefreshToken, &userDB.ProfilePic)
 	if err == sql.ErrNoRows {
@@ -248,7 +242,7 @@ func (u UsersHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refreshToken := cookie.Value
-	var user User
+	var user databasestructs.User
 	err = u.DB.GetUserByRefreshToken(refreshToken).Scan(&user.ID, &user.Username, &user.Email)
 	if err != nil {
 		fmt.Println("can't find user by refresh token", err)
@@ -286,7 +280,7 @@ func (u UsersHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refreshToken := cookie.Value
-	var user User
+	var user databasestructs.User
 	err = u.DB.GetUserByRefreshToken(refreshToken).Scan(&user.ID, &user.Username, &user.Email)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -339,7 +333,7 @@ func (u UsersHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var user User
+	var user databasestructs.User
 	var profilepic sql.NullString
 	err = u.DB.GetUserByID(id).Scan(&user.Username, &user.Email, &profilepic)
 	if err != nil {
@@ -364,10 +358,10 @@ func (u UsersHandler) HandleUserList(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var users []User
+	var users []databasestructs.User
 
 	for rows.Next() {
-		var user User
+		var user databasestructs.User
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &user.ProfilePic); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -411,7 +405,7 @@ func (u UsersHandler) HandleUserDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u UsersHandler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
-	var user User
+	var user databasestructs.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -463,7 +457,7 @@ func (u UsersHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user User
+	var user databasestructs.User
 	err := u.DB.GetUserByUsername(newPasswords.Username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &sql.NullString{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -545,7 +539,7 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 	fileName := r.MultipartForm.File["profileImage"][0].Filename
 	username := r.FormValue("username")
 
-	var user User
+	var user databasestructs.User
 	var profilepic sql.NullString
 	err = u.DB.GetUserByUsername(username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &profilepic)
 	if err != nil {
@@ -591,7 +585,7 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (u UsersHandler) CreateUserAdmin(w http.ResponseWriter, r *http.Request) {
-	var reqUser User
+	var reqUser databasestructs.User
 	if err := json.NewDecoder(r.Body).Decode(&reqUser); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
