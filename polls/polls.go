@@ -182,7 +182,7 @@ func (p PollsHandler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertID, _ := insertRes.LastInsertId()
-	response := fmt.Sprintf("Created quiz with ID: %d", insertID)
+	response := fmt.Sprintf("Created poll with ID: %d", insertID)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(response))
 }
@@ -414,7 +414,7 @@ func (p PollsHandler) getRookieStats(ctx context.Context, season string) ([]play
 }
 
 func (p PollsHandler) getAllStats(ctx context.Context, season string) ([]players.Player, error) {
-	rows, err := p.DB.GetPlayerStatsForQuiz(ctx, season)
+	rows, err := p.DB.GetPlayerStatsForPoll(ctx, season)
 	if err != nil {
 		return nil, err
 	}

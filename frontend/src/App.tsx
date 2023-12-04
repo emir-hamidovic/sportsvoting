@@ -13,7 +13,7 @@ import RequireAuth from './components/RequireAuth';
 import PersistLogin from './components/PersistLogin';
 import Unauthorized from './components/Unauthorized';
 import AdminUserCreationForm from './components/AdminUserCreationForm';
-import QuizCreationPage from './components/QuizCreationPage';
+import PollCreationPage from './components/PollCreationPage';
 import MyVotesPage from './components/MyVotesPage';
 import MyPollsPage from './components/MyPollsPage';
 import EditPollPage from './components/EditPollPage';
@@ -35,7 +35,7 @@ function App() {
           </Route>
 
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>
-            <Route path="/create-poll" element={<QuizCreationPage />} />
+            <Route path="/create-poll" element={<PollCreationPage />} />
           </Route>
 
           <Route element={<RequireAuth allowedRoles={["user", "admin"]} />}>

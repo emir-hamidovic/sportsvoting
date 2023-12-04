@@ -29,7 +29,7 @@ type Database interface {
 	SelectPlayerGamesPlayed(season string) (*sql.Rows, error)
 	CheckPlayerExists(playerid string) *sql.Row
 	SelectTeamByAbbrevation(teamabbr string) *sql.Row
-	GetPlayerStatsForQuiz(ctx context.Context, season string) (*sql.Rows, error)
+	GetPlayerStatsForPoll(ctx context.Context, season string) (*sql.Rows, error)
 	GetSixManStats(ctx context.Context, season string) (*sql.Rows, error)
 	GetDPOYStats(ctx context.Context, season string) (*sql.Rows, error)
 	GetROYStats(ctx context.Context, season string) (*sql.Rows, error)

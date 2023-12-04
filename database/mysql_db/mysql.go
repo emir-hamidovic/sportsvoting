@@ -134,7 +134,7 @@ func (m *MySqlDB) SelectTeamByAbbrevation(teamabbr string) *sql.Row {
 	return m.db.QueryRow("SELECT teamabbr from teams where teamabbr=?", teamabbr)
 }
 
-func (m *MySqlDB) GetPlayerStatsForQuiz(ctx context.Context, season string) (*sql.Rows, error) {
+func (m *MySqlDB) GetPlayerStatsForPoll(ctx context.Context, season string) (*sql.Rows, error) {
 	query := `
         SELECT players.playerid, name, gamesplayed, minutespergame, pointspergame, reboundspergame, assistspergame, stealspergame, blockspergame, fgpercentage, threeptpercentage, ftpercentage, turnoverspergame, position, per, ows, dws, ws, obpm, dbpm, bpm, vorp, offrtg, defrtg
         FROM players

@@ -12,7 +12,7 @@ const HomePage = () => {
         <Polls />
         {auth.user ? <Box textAlign="center" mt={1}>
             <Button variant="contained" color="primary" onClick={() => navigate("/create-poll")}>
-            Create New Quiz
+            Create New Poll
             </Button>
         </Box> : ''}
     </div>

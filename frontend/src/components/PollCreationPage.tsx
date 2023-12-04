@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/use-auth';
 
 
-const QuizCreationPage: React.FC = () => {
+const PollCreationPage: React.FC = () => {
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [season, setSeason] = useState<string>('');
@@ -83,19 +83,19 @@ const QuizCreationPage: React.FC = () => {
     data.append('userid', auth.id.toString());
     try {
       await axiosInstance.post('/polls/create', data);
-      alert('Quiz created successfully');
+      alert('Poll created successfully');
       navigate(-1);
     } catch (error) {
-      console.error('Error creating quiz:', error);
-      alert('An error occurred while creating the quiz.');
+      console.error('Error creating poll:', error);
+      alert('An error occurred while creating the poll.');
     }
   };
 
   return (
-    <Container maxWidth="lg" className="quiz-creation-container">
+    <Container maxWidth="lg" className="poll-creation-container">
       <Paper elevation={3} sx={{ padding: 3 }}>
         <Typography variant="h4" gutterBottom>
-          Create a New Quiz
+          Create a New Poll
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
@@ -164,7 +164,7 @@ const QuizCreationPage: React.FC = () => {
                 color="primary"
                 className="submit-button"
               >
-                Create Quiz
+                Create Poll
               </Button>
             </Grid>
           </Grid>
@@ -174,4 +174,4 @@ const QuizCreationPage: React.FC = () => {
   );
 };
 
-export default QuizCreationPage;
+export default PollCreationPage;
