@@ -51,6 +51,8 @@ func (p PollsHandler) GetPlayerStatsForPoll(w http.ResponseWriter, r *http.Reque
 		players, err = p.getRookieStats(ctx, poll.Season)
 	case "All stats":
 		players, err = p.getAllStats(ctx, poll.Season)
+	case "GOAT stats":
+		players, err = p.getGOATStats(poll.Season)
 	default:
 		players, err = p.getAllStats(ctx, poll.Season)
 	}
@@ -405,6 +407,30 @@ func (p PollsHandler) getRookieStats(ctx context.Context, season string) ([]data
 
 func (p PollsHandler) getAllStats(ctx context.Context, season string) ([]databasestructs.PlayerInfo, error) {
 	rows, err := p.DB.GetPlayerStatsForPoll(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var playerList []databasestructs.PlayerInfo
+
+	for rows.Next() {
+		var p databasestructs.PlayerInfo
+		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
+		if err != nil {
+			return nil, err
+		}
+		playerList = append(playerList, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return playerList, nil
+}
+
+func (p PollsHandler) getGOATStats(season string) ([]databasestructs.PlayerInfo, error) {
+	rows, err := p.DB.GetGOATStats(season)
 	if err != nil {
 		return nil, err
 	}

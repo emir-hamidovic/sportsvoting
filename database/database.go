@@ -18,6 +18,7 @@ type Database interface {
 	StatsOperations
 	PollOperations
 	UserOperations
+	GoatOperations
 }
 
 type PlayerOperations interface {
@@ -84,6 +85,15 @@ type UserOperations interface {
 	GetVotesOfUser(ctx context.Context, userid int64) (*sql.Rows, error)
 	CreateAdminUser() error
 	GetCurrentProfilePic(id int64) *sql.Row
+}
+
+type GoatOperations interface {
+	InsertGOATPlayer(info databasestructs.GoatPlayers) (sql.Result, error)
+	UpdateGOATPlayer(info databasestructs.GoatPlayers) (sql.Result, error)
+	UpdateGOATStats(stats databasestructs.GoatStats) (sql.Result, error)
+	InsertGOATStats(stats databasestructs.GoatStats) (sql.Result, error)
+	GetGOATStats(season string) (*sql.Rows, error)
+	GetActivePlayers() (*sql.Rows, error)
 }
 
 type Config struct {

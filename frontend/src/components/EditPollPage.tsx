@@ -45,7 +45,7 @@ const EditPollPage: React.FC = () => {
 		season: '',
 	});
 	const imageInputRef = useRef<HTMLInputElement | null>(null);
-	const [statsOptions] = useState<string[]>(["All stats", "Defensive", "Sixth man", "Rookie"]);
+	const [statsOptions] = useState<string[]>(["All stats", "Defensive", "Sixth man", "Rookie", "GOAT stats"]);
 	const [seasonOptions, setSeasonOptions] = useState<string[]>([]);
 	const [selectedStats, setSelectedStats] = useState<string>("");
 	const [selectedSeason, setSelectedSeason] = useState<string>("");

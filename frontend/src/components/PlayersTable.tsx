@@ -1,6 +1,6 @@
 import { Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography, Button, Snackbar } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { FlattenedAPIResponse } from '../utils/api-response';
+import { FlattenedAPIResponse, APIResponse, usePlayers } from '../utils/api-response';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAuth from '../hooks/use-auth';
 import { useState } from 'react';
@@ -8,7 +8,7 @@ import axiosInstance from '../utils/axios-instance';
 
 interface PlayersTableProps {
 	count: number;
-	items: FlattenedAPIResponse[];
+	items: APIResponse[];
 	onDeselectOne?: (player: string) => void;
 	onPageChange?: (event: React.MouseEvent<HTMLButtonElement> | null, page: React.SetStateAction<number>) => void;
 	onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -69,7 +69,6 @@ export const PlayersTable = (props: PlayersTableProps) => {
 	const id = pollId ? parseInt(pollId, 10) : undefined;
 	const { auth } = useAuth();
 	const navigate = useNavigate();
-
 	const [successMessage, setSuccessMessage] = useState('');
 	const [errorMessage, setErrorMessage] = useState('');
 	const [sortField, setSortField] = useState<string | null>(null);
@@ -109,11 +108,18 @@ export const PlayersTable = (props: PlayersTableProps) => {
 		}
 	};
 
-	const sortedItems = [...items].sort((a, b) => {
+	const getColumnValue = (obj: APIResponse, column: string): any => {
+		if (column.includes('.')) {
+		  return column.split('.').reduce((o, key) => o?.[key], obj);
+		} else {
+		  return obj.stats?.[column] || obj.advstats?.[column] || obj[column];
+		}
+	  };
+
+	let sortedItems = [...items].sort((a, b) => {
 		if (sortField) {
-			const aValue = a[sortField];
-			const bValue = b[sortField];
-	
+			const aValue = getColumnValue(a, sortField);
+    		const bValue = getColumnValue(b, sortField);
 			if (typeof aValue === 'string' && typeof bValue === 'string') {
 				const comparison = aValue.localeCompare(bValue);
 				return sortOrder === 'asc' ? comparison : -comparison;
@@ -127,6 +133,8 @@ export const PlayersTable = (props: PlayersTableProps) => {
 	
 		return 0;
 	});
+
+	sortedItems = usePlayers(sortedItems, page, rowsPerPage);
 
 	return (
 		<Card>
@@ -160,7 +168,7 @@ export const PlayersTable = (props: PlayersTableProps) => {
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{sortedItems.map((player: FlattenedAPIResponse) => {
+						{sortedItems.map((player: APIResponse) => {
 							const isSelected = selected.includes(player.playerid);
 
 							return (
@@ -184,7 +192,9 @@ export const PlayersTable = (props: PlayersTableProps) => {
 									<TableCell></TableCell>
 									{tableFields.map((column) => (
 										<TableCell key={column}>
-											{player[column]}
+											{column.includes('.') // Check if the column has nested structure
+												? column.split('.').reduce((obj, key) => obj?.[key], player)
+												: player.stats?.[column] || player.advstats?.[column] || player[column]}
 										</TableCell>
 									))}
 								</TableRow>

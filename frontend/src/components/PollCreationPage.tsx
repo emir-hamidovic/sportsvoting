@@ -21,7 +21,7 @@ const PollCreationPage: React.FC = () => {
 	const [description, setDescription] = useState<string>('');
 	const [season, setSeason] = useState<string>('');
 	const [selectedStats, setSelectedStats] = useState<string>('');
-	const [statsOptions] = useState<string[]>(["All stats", "Defensive", "Sixth man", "Rookie"]);
+	const [statsOptions] = useState<string[]>(["All stats", "Defensive", "Sixth man", "Rookie", "GOAT stats"]);
 	const [seasonOptions, setSeasonOptions] = useState<string[]>([]);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const navigate = useNavigate();

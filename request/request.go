@@ -69,3 +69,15 @@ func GetPlayerIDFromDocument(row *goquery.Selection) string {
 
 	return ""
 }
+
+func GetPlayerIDFromLeadersDocument(row *goquery.Selection) string {
+	id, exists := row.Find("td a").Attr("href")
+	if exists {
+		idParts := strings.Split(id, "/")
+		if len(idParts) > 3 {
+			return strings.TrimSuffix(idParts[3], ".html")
+		}
+	}
+
+	return ""
+}

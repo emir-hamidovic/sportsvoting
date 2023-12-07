@@ -5,9 +5,16 @@ export interface APIResponse {
 	playerid: string,
 	name: string
 	stats: Stats,
-	advstats: AdvStats
+	advstats: AdvStats,
+	playoffstats: Stats,
+	playoffadvstats: AdvStats,
+	totalstats: TotalStats,
+	totalplayoffstats: TotalStats,
+	accolades: Accolades,
+	[key: string]: any
 }
   
+// export type FlattenedAPIResponse = {playerid: string, name: string} & Stats & AdvStats & {playoffstats: Stats} & {playoffadvstats: AdvStats} & {totalstats: TotalStats} & {totalplayoffstats: TotalStats} & {accolades: Accolades} & {[key: string]: string | number};
 export type FlattenedAPIResponse = {playerid: string, name: string} & Stats & AdvStats & {[key: string]: string | number};
 
 interface Stats {
@@ -22,6 +29,7 @@ interface Stats {
 	fgpct?: string;
 	threefgpct?: string;
 	ftpct?: string;
+	[key: string]: any;
 }
 
 interface AdvStats {
@@ -35,13 +43,34 @@ interface AdvStats {
 	vorp?: string;
 	offrtg?: string;
 	defrtg?: string;
+	[key: string]: any;
 }
 
-export function applyPagination(documents: FlattenedAPIResponse[], page: number, rowsPerPage: number): FlattenedAPIResponse[] {
+interface TotalStats {
+	points?: number;
+	rebounds?: number;
+	assists?: number;
+	steals?: number;
+	blocks?: number;
+}
+
+interface Accolades{
+	allstar?: number;
+	allnba?: number;
+	alldefense?: number;
+	championships?: number;
+	dpoy?: number;
+	sixman?: number;
+	roy?: number;
+	fmvp?: number;
+	mvp?: number;
+}
+
+export function applyPagination(documents: APIResponse[], page: number, rowsPerPage: number): APIResponse[] {
 	return documents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 }
 
-export const usePlayers = (data: FlattenedAPIResponse[], page: number, rowsPerPage: number): FlattenedAPIResponse[] => {
+export const usePlayers = (data: APIResponse[], page: number, rowsPerPage: number): APIResponse[] => {
 	return useMemo(
 		() => {
 			return applyPagination(data, page, rowsPerPage);
@@ -50,7 +79,7 @@ export const usePlayers = (data: FlattenedAPIResponse[], page: number, rowsPerPa
 	);
 };
 
-export const usePlayerIds = (players: FlattenedAPIResponse[]): string[] => {
+export const usePlayerIds = (players: APIResponse[]): string[] => {
 	return useMemo(
 		() => {
 			return players.map((player) => player.playerid);
