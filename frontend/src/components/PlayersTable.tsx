@@ -1,6 +1,6 @@
 import { Avatar, Box, Card, Checkbox, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography, Button, Snackbar } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { FlattenedAPIResponse, APIResponse, usePlayers } from '../utils/api-response';
+import {APIResponse, usePlayers, flattenObject } from '../utils/api-response';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAuth from '../hooks/use-auth';
 import { useState } from 'react';
@@ -26,29 +26,91 @@ export const getInitials = (name = '') => name
 	.map((v) => v && v[0].toUpperCase())
 	.join('');
 
-const columnNameMapping: { [key: string]: string } = {
-	g: 'Games',
-	mpg: 'Minutes',
-	ppg: 'Points',
-	apg: 'Assists',
-	rpg: 'Rebounds',
-	spg: 'Steals',
-	bpg: 'Blocks',
-	topg: 'Turnovers',
-	fgpct: 'FG%',
-	threefgpct: '3FG%',
-	ftpct: 'FT%',
-	per: 'PER',
-	ows: 'OWS',
-	dws: 'DWS',
-	ws: 'WS',
-	obpm: 'OBPM',
-	dbpm: 'DBPM',
-	bpm: 'BPM',
-	vorp: 'VORP',
-	offrtg: 'ORtg',
-	defrtg: 'DRtg',
+const getColumnName = (column: string): string => {
+	const nestedFields = column.split('.');
+	if (nestedFields.length > 1) {
+		const [nestedField, nestedColumn] = nestedFields;
+		return nestedColumnNameMapping[nestedField]?.[nestedColumn] || column;
+	}
+
+	return "";
 };
+
+const nestedColumnNameMapping: { [key: string]: { [key: string]: string } } = {
+	playoffstats: {
+		g: 'PO Games',
+		mpg: 'PO Minutes',
+		ppg: 'PO Points',
+		apg: 'PO Assists',
+		rpg: 'PO Rebounds',
+		spg: 'PO Steals',
+		bpg: 'PO Blocks',
+		topg: 'PO Turnovers',
+		fgpct: 'PO FG%',
+		threefgpct: 'PO 3FG%',
+		ftpct: 'PO FT%',
+	},
+	stats: {
+		g: 'Games',
+		mpg: 'Minutes',
+		ppg: 'Points',
+		apg: 'Assists',
+		rpg: 'Rebounds',
+		spg: 'Steals',
+		bpg: 'Blocks',
+		topg: 'Turnovers',
+		fgpct: 'FG%',
+		threefgpct: '3FG%',
+		ftpct: 'FT%',
+	},
+	advstats: {
+		per: 'PER',
+		ows: 'OWS',
+		dws: 'DWS',
+		ws: 'WS',
+		obpm: 'OBPM',
+		dbpm: 'DBPM',
+		bpm: 'BPM',
+		vorp: 'VORP',
+		offrtg: 'ORtg',
+		defrtg: 'DRtg',
+	},
+	playoffadvstats: {
+		per: 'PO PER',
+		ows: 'PO OWS',
+		dws: 'PO DWS',
+		ws: 'PO WS',
+		obpm: 'PO OBPM',
+		dbpm: 'PO DBPM',
+		bpm: 'PO BPM',
+		vorp: 'PO VORP',
+		offrtg: 'PO ORtg',
+		defrtg: 'PO DRtg',
+	},
+	totalstats: {
+		total_points: 'Career points',
+		total_rebounds: 'Career rebounds',
+		total_assists: 'Career assists',
+		total_steals: 'Career steals',
+		total_blocks: 'Career blocks'
+	},
+	totalplayoffstats: {
+		total_points: 'Career PO points',
+		total_rebounds: 'Career PO rebounds',
+		total_assists: 'Career PO assists',
+		total_steals: 'Career PO steals',
+		total_blocks: 'Career PO blocks'
+	},
+	accolades: {
+		allstar: 'All-Star',
+		allnba: 'All-NBA',
+		alldefense: 'All-Defense',
+		championships: 'Championhips',
+		dpoy: 'DPOY',
+		fmvp: 'Finals MVP',
+		mvp: 'MVP',
+	}
+  };
 
 export const PlayersTable = (props: PlayersTableProps) => {
 	const {
@@ -63,8 +125,9 @@ export const PlayersTable = (props: PlayersTableProps) => {
 		selected = [],
 		columns
 	} = props;
-
-	const tableFields = columns.slice(2);
+	const tableFields = columns.slice(2); // slice name and playerid from the start
+	console.log(columns);
+	console.log(tableFields);
 	const { pollId } = useParams();
 	const id = pollId ? parseInt(pollId, 10) : undefined;
 	const { auth } = useAuth();
@@ -112,7 +175,7 @@ export const PlayersTable = (props: PlayersTableProps) => {
 		if (column.includes('.')) {
 		  return column.split('.').reduce((o, key) => o?.[key], obj);
 		} else {
-		  return obj.stats?.[column] || obj.advstats?.[column] || obj[column];
+		  return obj.stats?.[column] || obj.advstats?.[column] || obj.playoffstats?.[column] || obj.playoffadvstats?.[column] || obj.accolades?.[column] || obj.totalstats?.[column] || obj.totalplayoffstats?.[column] || obj[column];
 		}
 	  };
 
@@ -135,10 +198,9 @@ export const PlayersTable = (props: PlayersTableProps) => {
 	});
 
 	sortedItems = usePlayers(sortedItems, page, rowsPerPage);
-
 	return (
 		<Card>
-			<Box sx={{ minWidth: 800 }}>
+			<Box sx={{ minWidth: 800, overflowX: 'auto' }}>
 				<Table>
 					<TableHead>
 						<TableRow>
@@ -153,7 +215,7 @@ export const PlayersTable = (props: PlayersTableProps) => {
 											gap: '4px',
 										}}
 									>
-										{columnNameMapping[column]}
+										{getColumnName(column)}
 										{sortField === column && (
 											<ArrowDropDownIcon
 												style={{
@@ -194,7 +256,7 @@ export const PlayersTable = (props: PlayersTableProps) => {
 										<TableCell key={column}>
 											{column.includes('.') // Check if the column has nested structure
 												? column.split('.').reduce((obj, key) => obj?.[key], player)
-												: player.stats?.[column] || player.advstats?.[column] || player[column]}
+												: player.stats?.[column] || player.advstats?.[column] || player.stats?.[column] || player[column]}
 										</TableCell>
 									))}
 								</TableRow>

@@ -2,20 +2,17 @@ import { useMemo } from "react";
 
 
 export interface APIResponse {
-	playerid: string,
-	name: string
-	stats: Stats,
-	advstats: AdvStats,
-	playoffstats: Stats,
-	playoffadvstats: AdvStats,
-	totalstats: TotalStats,
-	totalplayoffstats: TotalStats,
-	accolades: Accolades,
-	[key: string]: any
+	playerid: string;
+	name: string;
+	stats?: Stats;
+	advstats?: AdvStats;
+	playoffstats?: Stats;
+	playoffadvstats?: AdvStats;
+	totalstats?: TotalStats;
+	totalplayoffstats?: TotalStats;
+	accolades?: Accolades;
+	[key: string]: any;
 }
-  
-// export type FlattenedAPIResponse = {playerid: string, name: string} & Stats & AdvStats & {playoffstats: Stats} & {playoffadvstats: AdvStats} & {totalstats: TotalStats} & {totalplayoffstats: TotalStats} & {accolades: Accolades} & {[key: string]: string | number};
-export type FlattenedAPIResponse = {playerid: string, name: string} & Stats & AdvStats & {[key: string]: string | number};
 
 interface Stats {
 	g?: number;
@@ -47,11 +44,12 @@ interface AdvStats {
 }
 
 interface TotalStats {
-	points?: number;
-	rebounds?: number;
-	assists?: number;
-	steals?: number;
-	blocks?: number;
+	total_points?: number;
+	total_rebounds?: number;
+	total_assists?: number;
+	total_steals?: number;
+	total_blocks?: number;
+	[key: string]: any;
 }
 
 interface Accolades{
@@ -64,6 +62,7 @@ interface Accolades{
 	roy?: number;
 	fmvp?: number;
 	mvp?: number;
+	[key: string]: any;
 }
 
 export function applyPagination(documents: APIResponse[], page: number, rowsPerPage: number): APIResponse[] {

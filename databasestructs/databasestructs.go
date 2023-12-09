@@ -123,6 +123,14 @@ type GoatStats struct {
 	IsActive          bool    `json:"isactive,omitempty"`
 }
 
+type TotalStats struct {
+	TotalPoints   int64 `json:"total_points,omitempty"`
+	TotalRebounds int64 `json:"total_rebounds,omitempty"`
+	TotalAssists  int64 `json:"total_assists,omitempty"`
+	TotalSteals   int64 `json:"total_steals,omitempty"`
+	TotalBlocks   int64 `json:"total_blocks,omitempty"`
+}
+
 type GoatPlayers struct {
 	ID            string `json:"playerid,omitempty"`
 	Name          string `json:"name,omitempty"`
@@ -133,7 +141,19 @@ type GoatPlayers struct {
 	Dpoy          int64  `json:"dpoy,omitempty"`
 	SixMan        int64  `json:"sixman,omitempty"`
 	ROY           int64  `json:"roy,omitempty"`
-	FMVP          int64  `json:"finalsmvp,omitempty"`
+	FMVP          int64  `json:"fmvp,omitempty"`
 	MVP           int64  `json:"mvp,omitempty"`
 	IsActive      bool   `json:"isactive,omitempty"`
+}
+
+type PollResponse struct {
+	ID                string         `json:"playerid,omitempty"`
+	Name              string         `json:"name,omitempty"`
+	Stats             *PlayerStats   `json:"stats,omitempty"`
+	AdvStats          *AdvancedStats `json:"advstats,omitempty"`
+	PlayoffStats      *PlayerStats   `json:"playoffstats,omitempty"`
+	PlayoffAdvStats   *AdvancedStats `json:"playoffadvstats,omitempty"`
+	TotalStats        *TotalStats    `json:"totalstats,omitempty"`
+	TotalPlayoffStats *TotalStats    `json:"totalplayoffstats,omitempty"`
+	GoatPlayers       *GoatPlayers   `json:"accolades,omitempty"`
 }

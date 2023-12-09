@@ -51,13 +51,22 @@ func (p PollsHandler) GetPlayerStatsForPoll(w http.ResponseWriter, r *http.Reque
 		players, err = p.getRookieStats(ctx, poll.Season)
 	case "All stats":
 		players, err = p.getAllStats(ctx, poll.Season)
-	case "GOAT stats":
-		players, err = p.getGOATStats(poll.Season)
-	default:
-		players, err = p.getAllStats(ctx, poll.Season)
 	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if players == nil && poll.SelectedStats == "GOAT stats" {
+		goatplayers, err := p.getGOATStats(poll.Season)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'")
+		json.NewEncoder(w).Encode(goatplayers)
 		return
 	}
 
@@ -429,28 +438,98 @@ func (p PollsHandler) getAllStats(ctx context.Context, season string) ([]databas
 	return playerList, nil
 }
 
-func (p PollsHandler) getGOATStats(season string) ([]databasestructs.PlayerInfo, error) {
+func (p PollsHandler) getGOATStats(season string) ([]*databasestructs.PollResponse, error) {
 	rows, err := p.DB.GetGOATStats(season)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var playerList []databasestructs.PlayerInfo
+
+	pollResponse := []*databasestructs.PollResponse{}
 
 	for rows.Next() {
-		var p databasestructs.PlayerInfo
-		err := rows.Scan(&p.ID, &p.Name, &p.Games, &p.Minutes, &p.Points, &p.Rebounds, &p.Assists, &p.Steals, &p.Blocks, &p.FGPercentage, &p.ThreeFGPercentage, &p.FTPercentage, &p.Turnovers, &p.Position, &p.PER, &p.OffWS, &p.DefWS, &p.WS, &p.OffBPM, &p.DefBPM, &p.BPM, &p.VORP, &p.OffRtg, &p.DefRtg)
+		poll := &databasestructs.PollResponse{}
+		var (
+			playerID        string
+			name            string
+			position        string
+			pointsPerGame   float64
+			reboundsPerGame float64
+			assistsPerGame  float64
+			stealsPerGame   float64
+			blocksPerGame   float64
+			allStar         int64
+			allNBA          int64
+			allDefense      int64
+			championships   int64
+			dpoy            int64
+			finalsmvp       int64
+			mvp             int64
+			per             float64
+			ows             float64
+			dws             float64
+			ws              float64
+			dbpm            float64
+			obpm            float64
+			bpm             float64
+			defRtg          float64
+			offRtg          float64
+			playoffPoints   float64
+			playoffRebounds float64
+			playoffAssists  float64
+		)
+
+		err := rows.Scan(
+			&playerID, &name, &position, &pointsPerGame, &reboundsPerGame, &assistsPerGame, &stealsPerGame, &blocksPerGame,
+			&allStar, &allNBA, &allDefense, &championships, &dpoy, &finalsmvp, &mvp, &per, &ows, &dws, &ws, &dbpm, &obpm, &bpm,
+			&defRtg, &offRtg, &playoffPoints, &playoffRebounds, &playoffAssists)
 		if err != nil {
 			return nil, err
 		}
-		playerList = append(playerList, p)
+
+		poll.ID = playerID
+		poll.Name = name
+		poll.Stats = &databasestructs.PlayerStats{
+			Points:   pointsPerGame,
+			Rebounds: reboundsPerGame,
+			Assists:  assistsPerGame,
+			Steals:   stealsPerGame,
+			Blocks:   blocksPerGame,
+		}
+		poll.GoatPlayers = &databasestructs.GoatPlayers{
+			AllStar:       allStar,
+			AllNba:        allNBA,
+			AllDefense:    allDefense,
+			Championships: championships,
+			Dpoy:          dpoy,
+			FMVP:          finalsmvp,
+			MVP:           mvp,
+		}
+		poll.AdvStats = &databasestructs.AdvancedStats{
+			PER:    per,
+			OffWS:  ows,
+			DefWS:  dws,
+			WS:     ws,
+			DefBPM: dbpm,
+			OffBPM: obpm,
+			BPM:    bpm,
+			DefRtg: defRtg,
+			OffRtg: offRtg,
+		}
+		poll.PlayoffStats = &databasestructs.PlayerStats{
+			Points:   playoffPoints,
+			Rebounds: playoffRebounds,
+			Assists:  playoffAssists,
+		}
+
+		pollResponse = append(pollResponse, poll)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return playerList, nil
+	return pollResponse, nil
 }
 
 func (p PollsHandler) getSixmanStats(ctx context.Context, season string) ([]databasestructs.PlayerInfo, error) {

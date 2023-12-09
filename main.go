@@ -131,7 +131,7 @@ func main() {
 		{ID: 2, Name: "ROY", Description: "Description for ROY", Image: "roy-trophy.jpeg", SelectedStats: "Rookie", Season: "2023", UserID: 1},
 		{ID: 3, Name: "DPOY", Description: "Description for DPOY", Image: "dpoy-trophy.jpeg", SelectedStats: "Defensive", Season: "2023", UserID: 1},
 		{ID: 4, Name: "Sixth Man", Description: "Description for 6-man", Image: "6moy-trophy.jpeg", SelectedStats: "Sixth man", Season: "2023", UserID: 1},
-		{ID: 4, Name: "GOAT", Description: "Description for GOAT", Image: "6moy-trophy.jpeg", SelectedStats: "GOAT stats", Season: "All", UserID: 1},
+		{ID: 5, Name: "GOAT", Description: "Description for GOAT", Image: "6moy-trophy.jpeg", SelectedStats: "GOAT stats", Season: "All", UserID: 1},
 	}
 
 	for _, poll := range pollsInsert {

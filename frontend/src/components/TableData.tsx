@@ -1,13 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PlayersTable } from './PlayersTable';
 import { useSelection } from '../hooks/use-selection';
-import { APIResponse, FlattenedAPIResponse, flattenObject, usePlayerIds, usePlayers } from '../utils/api-response';
+import { APIResponse, usePlayerIds } from '../utils/api-response';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../utils/axios-instance';
 
 interface TableDataProps {
 	endpoint: string;
 }
+
+const convertToStringArray = (obj: any, parentKey = ''): string[] => {
+	return Object.entries(obj).flatMap(([key, value]) => {
+		const newKey = parentKey ? `${parentKey}.${key}` : key;
+	
+		if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+			return convertToStringArray(value, newKey);
+		} else {
+			return newKey;
+		}
+	});
+};
 
 export default function TableData ({ endpoint }: TableDataProps) {
 	const [data, setData] = useState<APIResponse[]>([]);
@@ -37,35 +49,10 @@ export default function TableData ({ endpoint }: TableDataProps) {
 		try {
 			const response = await axiosInstance.get<APIResponse[]>(endpoint + "/" + pollId);
 			let playerInfo = response.data;
-			// const transformedData: FlattenedAPIResponse[] = response.data.map((item) => ({
-			// 	playerid: item.playerid,
-			// 	name: item.name,
-			// 	g: item.stats.g  ?? 0,
-			// 	mpg: item.stats.mpg ?? '',
-			// 	ppg: item.stats.ppg ?? '',
-			// 	apg: item.stats.apg ?? '',
-			// 	rpg: item.stats.rpg ?? '',
-			// 	spg: item.stats.spg ?? '',
-			// 	bpg: item.stats.bpg ?? '',
-			// 	topg: item.stats.topg ?? '',
-			// 	fgpct: item.stats.fgpct ?? '',
-			// 	threefgpct: item.stats.threefgpct ?? '',
-			// 	ftpct: item.stats.ftpct ?? '',
-			// 	per: item.advstats.per ?? '',
-			// 	ows: item.advstats.ows ?? '',
-			// 	dws: item.advstats.dws ?? '',
-			// 	ws: item.advstats.ws ?? '',
-			// 	obpm: item.advstats.obpm ?? '',
-			// 	dbpm: item.advstats.dbpm ?? '',
-			// 	bpm: item.advstats.bpm ?? '',
-			// 	vorp: item.advstats.vorp ?? '',
-			// 	offrtg: item.advstats.offrtg ?? '',
-			// 	defrtg: item.advstats.defrtg ?? '',
-			// }));
 
 			if (playerInfo.length > 0) {
-				const firstObjectKeys = flattenObject(playerInfo[0]);
-				setResKeys(firstObjectKeys);
+				console.log(playerInfo[0]);
+				setResKeys(convertToStringArray(playerInfo[0]));
 			}
 
 			setData(playerInfo);
