@@ -19,6 +19,7 @@ type Votes struct {
 }
 
 type MyVotesResponse struct {
+	PollID     string `json:"poll_id"`
 	PlayerID   string `json:"player_id"`
 	PlayerName string `json:"player_name"`
 	PollName   string `json:"poll_name"`
@@ -56,7 +57,7 @@ func (v VotesHandler) GetUserVotes(w http.ResponseWriter, r *http.Request) {
 	var allVotes []MyVotesResponse
 	for rows.Next() {
 		var votes MyVotesResponse
-		err = rows.Scan(&votes.PlayerID, &votes.PlayerName, &votes.PollName, &votes.PollImage)
+		err = rows.Scan(&votes.PollID, &votes.PlayerID, &votes.PlayerName, &votes.PollName, &votes.PollImage)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue

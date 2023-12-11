@@ -91,6 +91,7 @@ const MyPollsPage: React.FC = () => {
 				<List>
 					{polls.map((poll) => (
 						<ListItem key={poll.id} sx={{transition: 'box-shadow 0.3s ease-in-out','&:hover': {boxShadow: '0px 5px 10px rgba(0, 0, 0, 0.2)',},}}>
+							<Link to={`/poll/${poll.id}`}>
 							<ListItemAvatar>
 								<Avatar src={`../../${poll.image}`}/>
 							</ListItemAvatar>
@@ -110,6 +111,7 @@ const MyPollsPage: React.FC = () => {
 									</IconButton>
 								</Box>
 							</ListItemSecondaryAction>
+							</Link>
 						</ListItem>
 					))}
 				</List>

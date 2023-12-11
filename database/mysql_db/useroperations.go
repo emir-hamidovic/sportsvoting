@@ -104,5 +104,5 @@ func (m *MySqlDB) UpdateUserProfilePic(username, profile_pic string) (sql.Result
 }
 
 func (m *MySqlDB) GetVotesOfUser(ctx context.Context, userid int64) (*sql.Rows, error) {
-	return m.db.QueryContext(ctx, "SELECT v.playerid, p.name, po.name, po.image FROM player_votes v INNER JOIN players p ON v.playerid=p.playerid INNER JOIN polls po ON v.pollid=po.id WHERE v.userid=?", userid)
+	return m.db.QueryContext(ctx, "SELECT po.id, COALESCE(v.playerid, v.goatplayerid) AS playerid, COALESCE(p.name, gp.name) AS player_name, po.name, po.image FROM player_votes v INNER JOIN polls po ON v.pollid = po.id LEFT JOIN players p ON v.playerid = p.playerid LEFT JOIN   goat_players gp ON v.goatplayerid = gp.playerid WHERE v.userid=?", userid)
 }

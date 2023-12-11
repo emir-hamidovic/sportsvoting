@@ -49,7 +49,7 @@ func issueToken(user, privatekey string) (string, error) {
 		"aud":      "api",
 		"nbf":      now.Unix(),
 		"iat":      now.Unix(),
-		"exp":      now.Add(10 * time.Minute).Unix(),
+		"exp":      now.Add(1 * time.Hour).Unix(),
 		"iss":      "http://localhost:8080",
 		"username": user,
 	})
@@ -535,7 +535,7 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 	defer file.Close()
-	uploadDir := "public/"
+	uploadDir := "frontend/public/"
 	fileName := r.MultipartForm.File["profileImage"][0].Filename
 	username := r.FormValue("username")
 

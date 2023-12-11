@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `stats` (
     ftpercentage      FLOAT,
     blockspergame     FLOAT,
     turnoverspergame  FLOAT,
-    season VARCHAR(4), /* year of the season */
+    season VARCHAR(25), /* year of the season */
     position  VARCHAR(5),
     teamabbr VARCHAR(3),
     rookieseason BOOLEAN DEFAULT false,

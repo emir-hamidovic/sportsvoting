@@ -59,6 +59,7 @@ type PollOperations interface {
 	UpdatePollByID(poll databasestructs.Poll) (sql.Result, error)
 	InsertSeasonEntered(season string) (sql.Result, error)
 	SelectSeasonsAvailable() (*sql.Rows, error)
+	SelectSeasonsForNonGOATStats() (*sql.Rows, error)
 	GetPlayerStatsForPoll(ctx context.Context, season string) (*sql.Rows, error)
 	GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error)
 	InsertPlayerVotes(pollid, userid int64, playerid string) (sql.Result, error)
@@ -92,7 +93,7 @@ type GoatOperations interface {
 	UpdateGOATPlayer(info databasestructs.GoatPlayers) (sql.Result, error)
 	UpdateGOATStats(stats databasestructs.GoatStats) (sql.Result, error)
 	InsertGOATStats(stats databasestructs.GoatStats) (sql.Result, error)
-	GetGOATStats(season string) (*sql.Rows, error)
+	GetGOATStats() (*sql.Rows, error)
 	GetActivePlayers() (*sql.Rows, error)
 }
 

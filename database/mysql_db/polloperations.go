@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"sportsvoting/databasestructs"
+	"strings"
 )
 
 func (m *MySqlDB) GetPlayerStatsForPoll(ctx context.Context, season string) (*sql.Rows, error) {
@@ -38,6 +39,16 @@ func (m *MySqlDB) InsertPollsWithId(poll databasestructs.Poll) (sql.Result, erro
 }
 
 func (m *MySqlDB) GetPlayerPollVotes(ctx context.Context, pollid int64) (*sql.Rows, error) {
+	var stats string
+	err := m.db.QueryRow("SELECT selected_stats FROM polls WHERE id=?", pollid).Scan(&stats)
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.Contains(stats, "GOAT") {
+		return m.db.QueryContext(ctx, "SELECT p.name, COUNT(v.votes_for) as votes_for, po.name FROM player_votes v INNER JOIN goat_players p ON v.goatplayerid=p.playerid INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? GROUP BY p.name, po.name ORDER BY COUNT(v.votes_for) DESC", pollid)
+	}
+
 	return m.db.QueryContext(ctx, "SELECT p.name, COUNT(v.votes_for) as votes_for, po.name FROM player_votes v INNER JOIN players p ON v.playerid=p.playerid INNER JOIN polls po ON v.pollid=po.id WHERE v.pollid=? GROUP BY p.name, po.name ORDER BY COUNT(v.votes_for) DESC", pollid)
 }
 
@@ -45,13 +56,30 @@ func (m *MySqlDB) InsertPlayerVotes(pollid, userid int64, playerid string) (sql.
 	var id int64
 	var playerIdDB string
 
-	rows := m.db.QueryRow("SELECT id, playerid FROM player_votes WHERE pollid=? AND userid=?", pollid, userid)
-	err := rows.Scan(&id, &playerIdDB)
-	if err == sql.ErrNoRows {
-		return m.db.Exec("INSERT IGNORE INTO player_votes(playerid, pollid, userid, votes_for) VALUES (?, ?, ?, 1)", playerid, pollid, userid)
-	} else if playerIdDB != playerid {
-		m.db.Exec("DELETE FROM player_votes WHERE id=?", id)
-		return m.db.Exec("INSERT IGNORE INTO player_votes(playerid, pollid, userid, votes_for) VALUES (?, ?, ?, 1)", playerid, pollid, userid)
+	var stats string
+	err := m.db.QueryRow("SELECT selected_stats FROM polls WHERE id=?", pollid).Scan(&stats)
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.Contains(stats, "GOAT") {
+		rows := m.db.QueryRow("SELECT id, goatplayerid FROM player_votes WHERE pollid=? AND userid=?", pollid, userid)
+		err := rows.Scan(&id, &playerIdDB)
+		if err == sql.ErrNoRows {
+			return m.db.Exec("INSERT IGNORE INTO player_votes(goatplayerid, pollid, userid, votes_for) VALUES (?, ?, ?, 1)", playerid, pollid, userid)
+		} else if playerIdDB != playerid {
+			m.db.Exec("DELETE FROM player_votes WHERE id=?", id)
+			return m.db.Exec("INSERT IGNORE INTO player_votes(goatplayerid, pollid, userid, votes_for) VALUES (?, ?, ?, 1)", playerid, pollid, userid)
+		}
+	} else {
+		rows := m.db.QueryRow("SELECT id, playerid FROM player_votes WHERE pollid=? AND userid=?", pollid, userid)
+		err := rows.Scan(&id, &playerIdDB)
+		if err == sql.ErrNoRows {
+			return m.db.Exec("INSERT IGNORE INTO player_votes(playerid, pollid, userid, votes_for) VALUES (?, ?, ?, 1)", playerid, pollid, userid)
+		} else if playerIdDB != playerid {
+			m.db.Exec("DELETE FROM player_votes WHERE id=?", id)
+			return m.db.Exec("INSERT IGNORE INTO player_votes(playerid, pollid, userid, votes_for) VALUES (?, ?, ?, 1)", playerid, pollid, userid)
+		}
 	}
 
 	return nil, nil
@@ -83,4 +111,8 @@ func (m *MySqlDB) InsertSeasonEntered(season string) (sql.Result, error) {
 
 func (m *MySqlDB) SelectSeasonsAvailable() (*sql.Rows, error) {
 	return m.db.Query("SELECT season FROM seasons_entered")
+}
+
+func (m *MySqlDB) SelectSeasonsForNonGOATStats() (*sql.Rows, error) {
+	return m.db.Query("SELECT season FROM seasons_entered WHERE season NOT IN ('All', 'Playoffs', 'Career')")
 }

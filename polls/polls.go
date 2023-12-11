@@ -41,6 +41,19 @@ func (p PollsHandler) GetPlayerStatsForPoll(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if poll.SelectedStats == "GOAT stats" {
+		goatplayers, err := p.getGOATStats()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'")
+		json.NewEncoder(w).Encode(goatplayers)
+		return
+	}
+
 	var players []databasestructs.PlayerInfo
 	switch poll.SelectedStats {
 	case "Defensive":
@@ -54,19 +67,6 @@ func (p PollsHandler) GetPlayerStatsForPoll(w http.ResponseWriter, r *http.Reque
 	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if players == nil && poll.SelectedStats == "GOAT stats" {
-		goatplayers, err := p.getGOATStats(poll.Season)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'")
-		json.NewEncoder(w).Encode(goatplayers)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (p PollsHandler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		isDev, _ = strconv.ParseBool(isdevEnv)
 	}
 
-	uploadDir := "public/"
+	uploadDir := "frontend/public/"
 	if !isDev {
 		uploadDir = "/app/shared/"
 	}
@@ -363,7 +363,7 @@ func (p PollsHandler) getPollByUserID(userid int64) ([]databasestructs.Poll, err
 func (p PollsHandler) GetSeasons(w http.ResponseWriter, r *http.Request) {
 	var seasons []string
 
-	rows, err := p.DB.SelectSeasonsAvailable()
+	rows, err := p.DB.SelectSeasonsForNonGOATStats()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -438,8 +438,8 @@ func (p PollsHandler) getAllStats(ctx context.Context, season string) ([]databas
 	return playerList, nil
 }
 
-func (p PollsHandler) getGOATStats(season string) ([]*databasestructs.PollResponse, error) {
-	rows, err := p.DB.GetGOATStats(season)
+func (p PollsHandler) getGOATStats() ([]*databasestructs.PollResponse, error) {
+	rows, err := p.DB.GetGOATStats()
 	if err != nil {
 		return nil, err
 	}

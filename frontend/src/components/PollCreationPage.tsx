@@ -23,7 +23,9 @@ const PollCreationPage: React.FC = () => {
 	const [selectedStats, setSelectedStats] = useState<string>('');
 	const [statsOptions] = useState<string[]>(["All stats", "Defensive", "Sixth man", "Rookie", "GOAT stats"]);
 	const [seasonOptions, setSeasonOptions] = useState<string[]>([]);
+	const [fetchedSeasonOptions, setFetchedSeasonOptions] = useState<string[]>([]);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [isSeasonDisabled, setIsSeasonDisabled] = useState<boolean>(true);
 	const navigate = useNavigate();
 	const { auth } = useAuth();
 
@@ -31,6 +33,7 @@ const PollCreationPage: React.FC = () => {
 		try {
 			const response = await axiosInstance.get('/seasons/get');
 			setSeasonOptions(response.data);
+			setFetchedSeasonOptions(response.data);
 		} catch (error) {
 			console.error('Error fetching data:', error);
 		}
@@ -57,7 +60,18 @@ const PollCreationPage: React.FC = () => {
 	const handleStatsChange = (
 		event: SelectChangeEvent<string>
 	) => {
-		setSelectedStats(event.target.value as string);
+		const selectedStatsType = event.target.value as string;
+		setSelectedStats(selectedStatsType);
+
+		setIsSeasonDisabled(selectedStatsType === '');
+		if (selectedStatsType === 'GOAT stats') {
+			setSeasonOptions(['All', 'Playoffs', 'Career']);
+		} else {
+			setSeasonOptions(fetchedSeasonOptions);
+		}
+
+		setSeason('');
+
 	};
 
 	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,12 +132,29 @@ const PollCreationPage: React.FC = () => {
 							/>
 						</Grid>
 						<Grid item md={12}>
+							<div className="label">Select stats type to display:</div>
+							<FormControl fullWidth variant="standard">
+								<Select
+									value={selectedStats}
+									onChange={handleStatsChange}
+									label="Select Stats type"
+								>
+									{statsOptions.map((stat) => (
+										<MenuItem key={stat} value={stat}>
+											{stat}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Grid>
+						<Grid item md={12}>
 							<div className="label">Season:</div>
 							<FormControl fullWidth variant="standard">
 								<Select
 									value={season}
 									onChange={handleSeasonChange}
 									label="Season"
+									disabled={isSeasonDisabled}
 								>
 								 {seasonOptions.map((stat) => (
 								<MenuItem key={stat} value={stat}>
@@ -140,22 +171,6 @@ const PollCreationPage: React.FC = () => {
 								accept="image/*"
 								onChange={handleFileChange}
 							/>
-						</Grid>
-						<Grid item md={12}>
-							<div className="label">Select stats type to display:</div>
-							<FormControl fullWidth variant="standard">
-								<Select
-									value={selectedStats}
-									onChange={handleStatsChange}
-									label="Select Stats type"
-								>
-									{statsOptions.map((stat) => (
-										<MenuItem key={stat} value={stat}>
-											{stat}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
 						</Grid>
 						<Grid item md={12}>
 							<Button

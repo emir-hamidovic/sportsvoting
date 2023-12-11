@@ -9,6 +9,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  SelectChangeEvent,
   Snackbar,
   TextField,
   Typography,
@@ -49,6 +50,8 @@ const EditPollPage: React.FC = () => {
 	const [seasonOptions, setSeasonOptions] = useState<string[]>([]);
 	const [selectedStats, setSelectedStats] = useState<string>("");
 	const [selectedSeason, setSelectedSeason] = useState<string>("");
+	const [isSeasonDisabled, setIsSeasonDisabled] = useState<boolean>(true);
+	const [fetchedSeasonOptions, setFetchedSeasonOptions] = useState<string[]>([]);
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -74,9 +77,15 @@ const EditPollPage: React.FC = () => {
 
 			setSelectedStats(pollData.selected_stats);
 			setSelectedSeason(pollData.season.toString());
-
+			setIsSeasonDisabled(false);
 			const seasonsResponse = await axiosInstance.get('/seasons/get');
-			setSeasonOptions(seasonsResponse.data);
+			setFetchedSeasonOptions(seasonsResponse.data);
+
+			if (pollData.selected_stats == 'GOAT stats') {
+				setSeasonOptions(['All', 'Playoffs', 'Career'])
+			} else {
+				setSeasonOptions(seasonsResponse.data);
+			}
 		} catch (error) {
 			console.error('Error fetching data:', error);
 		}
@@ -92,6 +101,21 @@ const EditPollPage: React.FC = () => {
 	const handleCloseSnackbar = () => {
 		setSuccessMessage('');
 		setErrorMessage('');
+	};
+
+	const handleStatsChange = (
+		event: SelectChangeEvent<string>
+	) => {
+		setPollInfo({ ...pollInfo, selected_stats: event.target.value })
+		const selectedStatsType = event.target.value as string;
+		setIsSeasonDisabled(selectedStatsType === '');
+		if (selectedStatsType === 'GOAT stats') {
+			setSeasonOptions(['All', 'Playoffs', 'Career']);
+		} else {
+			setSeasonOptions(fetchedSeasonOptions);
+		}
+
+		setSelectedStats(selectedStatsType);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -190,7 +214,7 @@ const EditPollPage: React.FC = () => {
 				<FormControl fullWidth variant="standard">
 					<Select
 					value={selectedStats}
-					onChange={(e) => {setPollInfo({ ...pollInfo, selected_stats: e.target.value }); setSelectedStats(e.target.value as string)}}
+					onChange={handleStatsChange}
 					label="Select Stats type"
 					>
 					{statsOptions.map((stat) => (
@@ -208,6 +232,7 @@ const EditPollPage: React.FC = () => {
 					value={selectedSeason}
 					onChange={(e) => {setPollInfo({ ...pollInfo, season: e.target.value }); setSelectedSeason(e.target.value as string);}}
 					label="Season"
+					disabled={isSeasonDisabled}
 					>
 						{seasonOptions.map((stat) => (
 						<MenuItem key={stat} value={stat}>

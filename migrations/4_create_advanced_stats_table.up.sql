@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `advancedstats` (
     vorp  FLOAT,
     offrtg FLOAT,
     defrtg FLOAT,
-    season VARCHAR(4), /* year of the season */
+    season VARCHAR(25), /* year of the season */
     teamabbr VARCHAR(3),
     FOREIGN KEY(playerid) REFERENCES `players`(playerid),
     FOREIGN KEY(teamabbr) REFERENCES `teams`(teamabbr)

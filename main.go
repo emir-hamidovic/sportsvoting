@@ -95,6 +95,21 @@ func main() {
 		go func() {
 			playerIDs := goatplayers.GetGoatPlayersList()
 			goatplayers.InsertGoatPlayerStats(playerIDs, db)
+
+			_, err = db.InsertSeasonEntered("All")
+			if err != nil {
+				return err
+			}
+
+			_, err = db.InsertSeasonEntered("Playoff")
+			if err != nil {
+				return err
+			}
+
+			_, err = db.InsertSeasonEntered("Career")
+			if err != nil {
+				return err
+			}
 		}()
 	*/
 	// Schedule the function to run on the next 1st of November
@@ -127,10 +142,10 @@ func main() {
 	}()
 
 	pollsInsert := []databasestructs.Poll{
-		{ID: 1, Name: "MVP", Description: "Description for MVP", Image: "mvp-trophy.jpg", SelectedStats: "All stats", Season: "2023", UserID: 1},
-		{ID: 2, Name: "ROY", Description: "Description for ROY", Image: "roy-trophy.jpeg", SelectedStats: "Rookie", Season: "2023", UserID: 1},
-		{ID: 3, Name: "DPOY", Description: "Description for DPOY", Image: "dpoy-trophy.jpeg", SelectedStats: "Defensive", Season: "2023", UserID: 1},
-		{ID: 4, Name: "Sixth Man", Description: "Description for 6-man", Image: "6moy-trophy.jpeg", SelectedStats: "Sixth man", Season: "2023", UserID: 1},
+		{ID: 1, Name: "MVP", Description: "Description for MVP", Image: "mvp-trophy.jpg", SelectedStats: "All stats", Season: "2024", UserID: 1},
+		{ID: 2, Name: "ROY", Description: "Description for ROY", Image: "roy-trophy.jpeg", SelectedStats: "Rookie", Season: "2024", UserID: 1},
+		{ID: 3, Name: "DPOY", Description: "Description for DPOY", Image: "dpoy-trophy.jpeg", SelectedStats: "Defensive", Season: "2024", UserID: 1},
+		{ID: 4, Name: "Sixth Man", Description: "Description for 6-man", Image: "6moy-trophy.jpeg", SelectedStats: "Sixth man", Season: "2024", UserID: 1},
 		{ID: 5, Name: "GOAT", Description: "Description for GOAT", Image: "6moy-trophy.jpeg", SelectedStats: "GOAT stats", Season: "All", UserID: 1},
 	}
 
@@ -169,7 +184,7 @@ func main() {
 	api.HandleFunc("/polls/votes/reset", pollsHandler.ResetPollVotes).Methods("POST")
 	api.HandleFunc("/polls/users/get/{userid}", pollsHandler.GetUserPolls)
 
-	api.HandleFunc("/votes/user/get/{userid}", votesHandler.GetUserVotes)
+	api.HandleFunc("/votes/users/get/{userid}", votesHandler.GetUserVotes)
 	api.HandleFunc("/votes/players/{id:[0-9]+}", votesHandler.PlayerVotes).Methods("GET")
 	api.HandleFunc("/votes/players", votesHandler.InsertPlayerVotes).Methods("POST")
 	api.HandleFunc("/votes/teams/{id:[0-9]+}", votesHandler.TeamVotes)

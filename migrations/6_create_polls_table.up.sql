@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS `polls` (
   description  VARCHAR(256) NOT NULL,
   image        VARCHAR(500) NOT NULL,
   selected_stats     VARCHAR(500) NOT NULL,
-  season       CHAR(4) NOT NULL,
+  season       CHAR(25) NOT NULL,
   userid       INT NOT NULL,
   FOREIGN KEY(userid) REFERENCES `users`(id)
 );
