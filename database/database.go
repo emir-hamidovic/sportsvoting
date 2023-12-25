@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sportsvoting/database/mysql_db"
 	"sportsvoting/databasestructs"
+	"time"
 )
 
 const (
@@ -19,6 +20,7 @@ type Database interface {
 	PollOperations
 	UserOperations
 	GoatOperations
+	SyncOperations
 }
 
 type PlayerOperations interface {
@@ -95,6 +97,11 @@ type GoatOperations interface {
 	InsertGOATStats(stats databasestructs.GoatStats) (sql.Result, error)
 	GetGOATStats() (*sql.Rows, error)
 	GetActivePlayers() (*sql.Rows, error)
+}
+
+type SyncOperations interface {
+	GetLastSyncTimeFromDB() (time.Time, error)
+	UpdateLastSyncTimeInDB(newTime time.Time) error
 }
 
 type Config struct {
