@@ -14,8 +14,10 @@ jobs:
             include:
               - dockerfile: ./Dockerfile
                 image: emirhamidovic/sportsvoting-api
+                context: .
               - dockerfile: ./frontend/Dockerfile
                 image: emirhamidovic/sportsvoting-frontend
+                context: frontend
         steps:
             - name: Checkout-Repository
               uses: actions/checkout@v4
@@ -41,7 +43,7 @@ jobs:
             - name: Push to Docker Hub
               uses: docker/build-push-action@v5
               with:
-                context: .
+                context: ${{ matrix.context }}
                 file: ${{ matrix.dockerfile }}
                 push: true
                 tags: ${{ steps.meta.outputs.tags }}
