@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { Avatar, IconButton, Menu, MenuItem } from '@mui/material';
 import React from 'react';
 import {useLogout} from '../hooks/use-logout';
+import SearchBar from './SearchBar'
+const Logo = require('../images/logo-no-background.png')
+
 
 function Header() {
 	const { auth } = useAuth();
@@ -47,7 +50,10 @@ function Header() {
 
 	return (
 		<header className="header">
-			<Link to="/"> <h1 className="underline text-3xl">Sport Voting</h1></Link>
+			<div className='header-logo-styling'>
+			 <img src={Logo} className="header-logo" />
+			<Link to="/"> <h1 className="text-3xl">HoopsVote</h1></Link>
+			</div>
 			<div className="header-buttons">
 				{auth?.accessToken ? (
 					<div>
@@ -66,6 +72,9 @@ function Header() {
 				</div>
 				) : (
 					<React.Fragment>
+						<div className="search-bar">
+						<SearchBar></SearchBar>
+						</div>
 						<Link to="/login">Login</Link>
 						<Link to="/signup">Sign up</Link>
 					</React.Fragment>

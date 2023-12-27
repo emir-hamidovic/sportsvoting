@@ -1,8 +1,6 @@
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: emirhamidovic/sportsvoting-api:master
     env_file:
       - .env
     ports:
@@ -29,9 +27,7 @@ services:
     depends_on:
       - db
   frontend:
-    build:
-      context: frontend
-      dockerfile: Dockerfile
+    image: emirhamidovic/sportsvoting-frontend:master
     ports:
       - 80:80
     volumes:
