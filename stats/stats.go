@@ -2,6 +2,7 @@ package stats
 
 import (
 	"fmt"
+	"log"
 	"sportsvoting/database"
 	"sportsvoting/databasestructs"
 	"sportsvoting/request"
@@ -27,25 +28,25 @@ func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *data
 }
 
 func UpdateStats(db database.Database, stats databasestructs.PlayerStats) error {
-	fmt.Println(stats)
+	log.Println(stats)
 	res, err := db.UpdateStats(stats)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	if rows == 0 && stats.Season != "" {
 		_, err = db.InsertStats(stats)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 
-	fmt.Println("Player stats added to database.")
+	log.Println("Player stats added to database.")
 	return nil
 }
 
@@ -68,7 +69,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 			stats.PlayerID = id
 			_, err := db.UpdateTradedPlayerStats(stats)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			}
 		}
 	})
@@ -89,7 +90,7 @@ func SetRookies(db database.Database, season string) error {
 		id := request.GetPlayerIDFromDocument(row)
 		_, err := db.SetRookieStatus(id)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	})
 

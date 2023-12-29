@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"sportsvoting/database"
@@ -64,7 +64,7 @@ func issueToken(user, privatekey string) (string, error) {
 }
 
 func validateToken(tokenString, publickey string) (*jwt.Token, error) {
-	keyBytes, err := ioutil.ReadFile(publickey)
+	keyBytes, err := os.ReadFile(publickey)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read public key file: %w", err)
 	}
@@ -104,13 +104,14 @@ func (u UsersHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	var register Register
 	if err := json.NewDecoder(r.Body).Decode(&register); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := u.createNewUser(username, password, register.Email)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -156,16 +157,26 @@ func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	var userDB databasestructs.User
 	var match bool
-	err := u.DB.GetUserByUsername(user).Scan(&userDB.ID, &userDB.Username, &userDB.Email, &userDB.Password, &userDB.RefreshToken, &userDB.ProfilePic)
+	var refresh_token sql.NullString
+	err := u.DB.GetUserByUsername(user).Scan(&userDB.ID, &userDB.Username, &userDB.Email, &userDB.Password, &refresh_token, &userDB.ProfilePic)
 	if err == sql.ErrNoRows {
+		log.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("invalid credentials"))
 		return
-	} else {
-		match = checkPasswordHash(pwd, userDB.Password)
+	} else if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("database error"))
+		return
 	}
 
+	userDB.RefreshToken = refresh_token.String
+
+	match = checkPasswordHash(pwd, userDB.Password)
+
 	if !match {
+		log.Println("password are not matching")
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("invalid credentials"))
 		return
@@ -173,6 +184,7 @@ func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, err := issueToken(user, privateKeyAccessPath)
 	if err != nil {
+		log.Println(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("unable to issue token:" + err.Error()))
 		return
@@ -180,6 +192,7 @@ func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	refreshToken, err := issueToken(user, privateKeyRefreshPath)
 	if err != nil {
+		log.Println(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("unable to issue token:" + err.Error()))
 		return
@@ -188,12 +201,12 @@ func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var role string
 	err = u.DB.GetUserRolesByID(userDB.ID).Scan(&role)
 	if err != nil {
-		fmt.Println("error getting user roles", err)
+		log.Println("error getting user roles", err)
 	}
 
 	_, err = u.DB.UpdateUserRefreshToken(user, refreshToken)
 	if err != nil {
-		fmt.Println("Error updating refresh token for user ", user)
+		log.Println("Error updating refresh token for user ", user)
 	}
 
 	cookie := http.Cookie{
@@ -210,7 +223,7 @@ func (u UsersHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	jsonResp, err := u.returnTokenAndRoleOfUser(userDB.ID, accessToken, role, "")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println("Error marshaling json")
+		log.Println("Error marshaling json")
 	}
 
 	w.Write(jsonResp)
@@ -229,27 +242,20 @@ func (u UsersHandler) returnTokenAndRoleOfUser(id int64, accessToken, roles, use
 }
 
 func (u UsersHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("refresh_token")
+	refreshToken, err := u.checkRefreshTokenInCookie(w, r)
 	if err != nil {
-		switch {
-		case errors.Is(err, http.ErrNoCookie):
-			http.Error(w, "cookie not found", http.StatusNoContent)
-		default:
-			fmt.Println(err)
-			http.Error(w, "server error", http.StatusInternalServerError)
-		}
+		log.Println(err)
 		return
 	}
 
-	refreshToken := cookie.Value
 	var user databasestructs.User
 	err = u.DB.GetUserByRefreshToken(refreshToken).Scan(&user.ID, &user.Username, &user.Email)
 	if err != nil {
-		fmt.Println("can't find user by refresh token", err)
+		log.Println("can't find user by refresh token", err)
 	} else if user.Username != "" {
 		_, err := u.DB.UpdateUserRefreshToken(user.Username, "")
 		if err != nil {
-			fmt.Println("error deleting refresh token from db ", err)
+			log.Println("error deleting refresh token from db ", err)
 		}
 	}
 
@@ -268,30 +274,25 @@ func (u UsersHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u UsersHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("refresh_token")
+	refreshToken, err := u.checkRefreshTokenInCookie(w, r)
 	if err != nil {
-		switch {
-		case errors.Is(err, http.ErrNoCookie):
-			http.Error(w, "cookie not found", http.StatusUnauthorized)
-		default:
-			http.Error(w, "server error", http.StatusInternalServerError)
-		}
+		log.Println(err)
 		return
 	}
 
-	refreshToken := cookie.Value
 	var user databasestructs.User
 	err = u.DB.GetUserByRefreshToken(refreshToken).Scan(&user.ID, &user.Username, &user.Email)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	} else if err != nil {
-		fmt.Println("can't find user by refresh token", err)
+		log.Println("can't find user by refresh token", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	} else if user.Username != "" {
 		token, err := validateToken(refreshToken, publicKeyRefreshPath)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, "token not valid", http.StatusUnauthorized)
 			return
 		}
@@ -299,6 +300,7 @@ func (u UsersHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid && claims["username"] == user.Username {
 			accessToken, err := issueToken(user.Username, privateKeyAccessPath)
 			if err != nil {
+				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("unable to issue token:" + err.Error()))
 				return
@@ -307,12 +309,14 @@ func (u UsersHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 			var currentRoles string
 			err = u.DB.GetUserRolesByID(user.ID).Scan(&currentRoles)
 			if err != nil {
+				log.Println(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
 			resp, err := u.returnTokenAndRoleOfUser(user.ID, accessToken, currentRoles, user.Username)
 			if err != nil {
+				log.Println(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -324,27 +328,43 @@ func (u UsersHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (u UsersHandler) checkRefreshTokenInCookie(w http.ResponseWriter, r *http.Request) (string, error) {
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		switch {
+		case errors.Is(err, http.ErrNoCookie):
+			http.Error(w, "cookie not found", http.StatusUnauthorized)
+		default:
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
+		return "", err
+	}
+
+	refreshToken := cookie.Value
+	return refreshToken, nil
+}
+
 func (u UsersHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var user databasestructs.User
-	var profilepic sql.NullString
-	err = u.DB.GetUserByID(id).Scan(&user.Username, &user.Email, &profilepic)
+	err = u.DB.GetUserByID(id).Scan(&user.Username, &user.Email, &user.ProfilePic)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	user.ProfilePic = profilepic.String
-
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(user); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -353,6 +373,7 @@ func (u UsersHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) 
 func (u UsersHandler) HandleUserList(w http.ResponseWriter, r *http.Request) {
 	rows, err := u.DB.GetAllUsers()
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -363,6 +384,7 @@ func (u UsersHandler) HandleUserList(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var user databasestructs.User
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &user.ProfilePic); err != nil {
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -371,6 +393,7 @@ func (u UsersHandler) HandleUserList(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(users); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -381,12 +404,14 @@ func (u UsersHandler) HandleUserDelete(w http.ResponseWriter, r *http.Request) {
 	idStr := vars["id"]
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	result, err := u.DB.DeleteUser(id)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -399,6 +424,7 @@ func (u UsersHandler) HandleUserDelete(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -412,7 +438,7 @@ func (u UsersHandler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedEmail := user.Email
-	err := u.DB.GetUserByUsername(user.Username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &sql.NullString{})
+	err := u.DB.GetUserByUsername(user.Username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &sql.NullString{}, &user.ProfilePic)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -433,12 +459,14 @@ func (u UsersHandler) UpdateUsername(w http.ResponseWriter, r *http.Request) {
 		Username string `json:"username"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&users); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	_, err := u.DB.UpdateUserUsername(users.OldUser, users.Username)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -453,30 +481,36 @@ func (u UsersHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		Username    string `json:"username"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&newPasswords); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var user databasestructs.User
-	err := u.DB.GetUserByUsername(newPasswords.Username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &sql.NullString{})
+	err := u.DB.GetUserByUsername(newPasswords.Username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &sql.NullString{}, &user.ProfilePic)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if !checkPasswordHash(newPasswords.OldPassword, user.Password) {
-		http.Error(w, "Incorrect old password", http.StatusUnauthorized)
+		errMsg := "Incorrect old password"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusUnauthorized)
 		return
 	}
 
 	user.Password, err = hashPassword(newPasswords.NewPassword)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	_, err = u.DB.UpdateUserPassword(user.Username, user.Password)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -497,6 +531,7 @@ func checkPasswordHash(password, hash string) bool {
 func (u UsersHandler) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 	var id int64
 	if err := json.NewDecoder(r.Body).Decode(&id); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -504,6 +539,7 @@ func (u UsersHandler) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 	var currentRoles string
 	err := u.DB.GetUserRolesByID(id).Scan(&currentRoles)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -518,6 +554,7 @@ func (u UsersHandler) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 
 	_, err = u.DB.UpdateUserRoles(newRoles, id)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -531,6 +568,7 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 
 	file, _, err := r.FormFile("profileImage")
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Unable to parse file", http.StatusBadRequest)
 		return
 	}
@@ -541,8 +579,9 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 
 	var user databasestructs.User
 	var profilepic sql.NullString
-	err = u.DB.GetUserByUsername(username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RefreshToken, &profilepic)
+	err = u.DB.GetUserByUsername(username).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &sql.NullString{}, &profilepic)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -551,6 +590,7 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 	if user.ProfilePic != "" {
 		err := os.Remove(uploadDir + user.ProfilePic)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, "Error deleting old profile picture", http.StatusInternalServerError)
 			return
 		}
@@ -559,6 +599,7 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 	// Create a new file on the server and write the uploaded file to it
 	newFile, err := os.Create(uploadDir + fileName)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Unable to create file", http.StatusInternalServerError)
 		return
 	}
@@ -566,12 +607,14 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 
 	_, err = io.Copy(newFile, file)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Unable to copy file", http.StatusInternalServerError)
 		return
 	}
 
 	_, err = u.DB.UpdateUserProfilePic(username, fileName)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Unable to update profile pic", http.StatusInternalServerError)
 		return
 	}
@@ -587,13 +630,14 @@ func (u UsersHandler) UploadProfilePicHandler(w http.ResponseWriter, r *http.Req
 func (u UsersHandler) CreateUserAdmin(w http.ResponseWriter, r *http.Request) {
 	var reqUser databasestructs.User
 	if err := json.NewDecoder(r.Body).Decode(&reqUser); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := u.createNewUser(reqUser.Username, reqUser.Password, reqUser.Email)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

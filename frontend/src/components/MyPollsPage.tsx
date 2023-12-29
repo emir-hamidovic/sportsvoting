@@ -89,7 +89,7 @@ const MyPollsPage: React.FC = () => {
 			</Typography>
 			<Paper elevation={3} sx={{ padding: 2 }}>
 				<List>
-					{polls.map((poll) => (
+					{polls && polls.map((poll) => (
 						<ListItem key={poll.id} sx={{transition: 'box-shadow 0.3s ease-in-out','&:hover': {boxShadow: '0px 5px 10px rgba(0, 0, 0, 0.2)',},}}>
 							<Link to={`/poll/${poll.id}`}>
 							<ListItemAvatar>

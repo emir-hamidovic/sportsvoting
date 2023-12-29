@@ -102,6 +102,8 @@ type GoatOperations interface {
 type SyncOperations interface {
 	GetLastSyncTimeFromDB() (time.Time, error)
 	UpdateLastSyncTimeInDB(newTime time.Time) error
+	GetGOATLastSyncTimeFromDB() (time.Time, error)
+	UpdateGOATLastSyncTimeInDB(newTime time.Time) error
 }
 
 type Config struct {

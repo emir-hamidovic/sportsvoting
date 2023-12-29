@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sportsvoting/databasestructs"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,7 +18,7 @@ func (m *MySqlDB) CreateAdminUser() error {
 		return err
 	}
 
-	dbPass := os.Getenv("DBPASS")
+	dbPass := strings.TrimSpace(os.Getenv("DBPASS"))
 	if count == 0 {
 		bytes, err := bcrypt.GenerateFromPassword([]byte(dbPass), 14)
 		if err != nil {

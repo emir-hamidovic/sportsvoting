@@ -80,6 +80,19 @@ func isSyncNeeded(db database.Database) bool {
 	return timeDiff > threshold
 }
 
+func isGOATSyncNeeded(db database.Database) bool {
+	syncTime, err := db.GetGOATLastSyncTimeFromDB()
+	if err != nil {
+		log.Println(err)
+		return true
+	}
+
+	threshold := 10 * 24 * time.Hour
+	timeDiff := time.Since(syncTime)
+
+	return timeDiff > threshold
+}
+
 var db database.Database
 
 func main() {
@@ -109,28 +122,32 @@ func main() {
 		db.UpdateLastSyncTimeInDB(time.Now())
 	}
 
-	go func() {
-		playerIDs := goatplayers.GetGoatPlayersList()
-		goatplayers.InsertGoatPlayerStats(playerIDs, db)
+	if isGOATSyncNeeded(db) {
+		go func() {
+			playerIDs := goatplayers.GetGoatPlayersList()
+			goatplayers.InsertGoatPlayerStats(playerIDs, db)
 
-		_, err = db.InsertSeasonEntered("All")
-		if err != nil {
-			log.Println(err)
-			return
-		}
+			_, err = db.InsertSeasonEntered("All")
+			if err != nil {
+				log.Println(err)
+				return
+			}
 
-		_, err = db.InsertSeasonEntered("Playoff")
-		if err != nil {
-			log.Println(err)
-			return
-		}
+			_, err = db.InsertSeasonEntered("Playoff")
+			if err != nil {
+				log.Println(err)
+				return
+			}
 
-		_, err = db.InsertSeasonEntered("Career")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}()
+			_, err = db.InsertSeasonEntered("Career")
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			db.UpdateGOATLastSyncTimeInDB(time.Now())
+		}()
+	}
 
 	// Schedule the function to run on the next 1st of November
 	go func() {

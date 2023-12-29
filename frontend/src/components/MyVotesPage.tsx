@@ -35,7 +35,7 @@ const MyVotesPage: React.FC = () => {
 		<div className="my-votes">
 			<h1 className="text-3xl">Your Votes</h1>
 			<ul>
-			{userVotes.map((vote) => (
+			{userVotes && userVotes.map((vote) => (
 					<li key={vote.player_id} className="vote-item">
 					<div className="link-wrapper">
 						<Link to={`/poll/${vote.poll_id}`} className='link-no-style'>

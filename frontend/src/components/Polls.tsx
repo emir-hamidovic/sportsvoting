@@ -23,7 +23,7 @@ const Polls = () => {
 
 	return (
 		<div className="polls">
-				{polls.map(poll => (
+				{polls && polls.map(poll => (
 					<div key={poll['id']} className="poll">
 						<div className="poll-image">
 							<img src={`${poll['image']}`} alt={poll['name']} />

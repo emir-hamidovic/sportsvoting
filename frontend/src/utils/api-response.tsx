@@ -81,6 +81,9 @@ export const usePlayers = (data: APIResponse[], page: number, rowsPerPage: numbe
 export const usePlayerIds = (players: APIResponse[]): string[] => {
 	return useMemo(
 		() => {
+			if (!players) {
+				return [];
+			}
 			return players.map((player) => player.playerid);
 		},
 		[players]

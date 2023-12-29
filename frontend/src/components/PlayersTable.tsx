@@ -205,7 +205,7 @@ export const PlayersTable = (props: PlayersTableProps) => {
 					<TableHead>
 						<TableRow>
 						<TableCell padding="checkbox"></TableCell>
-							{columns.map((column) => (
+							{columns && columns.map((column) => (
 								<TableCell key={column} onClick={() => handleSort(column)}>
 									<div
 										style={{
@@ -230,7 +230,7 @@ export const PlayersTable = (props: PlayersTableProps) => {
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{sortedItems.map((player: APIResponse) => {
+						{sortedItems && sortedItems.map((player: APIResponse) => {
 							const isSelected = selected.includes(player.playerid);
 
 							return (
@@ -252,7 +252,7 @@ export const PlayersTable = (props: PlayersTableProps) => {
 										</Stack>
 									</TableCell>
 									<TableCell></TableCell>
-									{tableFields.map((column) => (
+									{tableFields && tableFields.map((column) => (
 										<TableCell key={column}>
 											{column.includes('.') // Check if the column has nested structure
 												? column.split('.').reduce((obj, key) => obj?.[key], player)

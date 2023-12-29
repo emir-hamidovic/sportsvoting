@@ -7,6 +7,9 @@ RUN go mod download
 
 COPY . ./
 
+RUN mkdir shared
+RUN cp -r frontend/public/* ./shared
+
 RUN apt-get update && apt-get install -y openssl
 RUN openssl genpkey -algorithm ED25519 -out refresh.ed
 RUN openssl pkey -pubout -in refresh.ed -out refresh.ed.pub
@@ -20,6 +23,7 @@ WORKDIR /
 
 COPY --from=build-stage /sportsvoting /sportsvoting
 COPY --from=build-stage /app/*.ed* /
+COPY --from=build-stage /app/shared /app/
 
 EXPOSE 8080
 

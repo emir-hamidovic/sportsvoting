@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sportsvoting/database"
 	"strconv"
@@ -40,6 +41,7 @@ func (v VotesHandler) GetUserVotes(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars["userid"])
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
@@ -49,6 +51,7 @@ func (v VotesHandler) GetUserVotes(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := v.DB.GetVotesOfUser(ctx, int64(userID))
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -59,7 +62,7 @@ func (v VotesHandler) GetUserVotes(w http.ResponseWriter, r *http.Request) {
 		var votes MyVotesResponse
 		err = rows.Scan(&votes.PollID, &votes.PlayerID, &votes.PlayerName, &votes.PollName, &votes.PollImage)
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 			continue
 		}
 
@@ -75,6 +78,7 @@ func (v VotesHandler) PlayerVotes(w http.ResponseWriter, r *http.Request) {
 	pollid := mux.Vars(r)["id"]
 	id, err := strconv.ParseInt(pollid, 10, 64)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -84,6 +88,7 @@ func (v VotesHandler) PlayerVotes(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := v.DB.GetPlayerPollVotes(ctx, id)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -94,6 +99,7 @@ func (v VotesHandler) PlayerVotes(w http.ResponseWriter, r *http.Request) {
 		var votes Votes
 		err := rows.Scan(&votes.Name, &votes.Value, &votes.Pollname)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -101,6 +107,7 @@ func (v VotesHandler) PlayerVotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := rows.Err(); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -117,12 +124,14 @@ func (v VotesHandler) InsertPlayerVotes(w http.ResponseWriter, r *http.Request) 
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	_, err = v.DB.InsertPlayerVotes(payload.PollID, payload.UserID, payload.PlayerID)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

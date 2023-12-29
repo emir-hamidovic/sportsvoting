@@ -34,7 +34,7 @@ func ParseTeams(db database.Database, season string) (map[string]databasestructs
 		}
 
 		team.Logo = scraper.GetTeamLogo(doc)
-		fmt.Println(team)
+		log.Println(team)
 
 		_, err = db.InsertTeam(team)
 		if err != nil {
@@ -44,7 +44,7 @@ func ParseTeams(db database.Database, season string) (map[string]databasestructs
 		time.Sleep(4 * time.Second)
 	}
 
-	fmt.Println("Teams added to database.")
+	log.Println("Teams added to database.")
 	return roster, nil
 }
 

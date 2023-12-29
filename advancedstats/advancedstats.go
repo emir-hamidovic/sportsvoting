@@ -2,6 +2,7 @@ package advancedstats
 
 import (
 	"fmt"
+	"log"
 	"sportsvoting/database"
 	"sportsvoting/databasestructs"
 	"sportsvoting/request"
@@ -25,24 +26,23 @@ func FillPlayerStatsForSeason(row *goquery.Selection, season string, stats *data
 }
 
 func UpdateStats(db database.Database, stats databasestructs.AdvancedStats) error {
-	// Problem with update, check this
-	fmt.Println(stats)
+	log.Println(stats)
 	res, err := db.UpdateAdvancedStats(stats)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	fmt.Println(rows, stats.Season)
 
 	if rows == 0 && stats.Season != "" {
-		fmt.Println("insert advanced", stats)
+		log.Println("insert advanced", stats)
 		_, err = db.InsertAdvancedStats(stats)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 
@@ -68,7 +68,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 			stats.PlayerID = id
 			_, err := db.UpdateTradedPlayerAdvancedStats(stats)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			}
 		}
 	})
@@ -89,7 +89,7 @@ func UpdateTradedPlayerStats(db database.Database, season string) error {
 			offrtg := scraper.GetTDDataStatFloat(row, "off_rtg")
 			_, err := db.UpdateOffAndDefRtg(offrtg, defrtg, season, id)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			}
 		}
 	})

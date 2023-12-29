@@ -84,7 +84,7 @@ const UserListPage: React.FC = () => {
 			</Typography>
 			<Paper elevation={3} sx={{ padding: 2 }}>
 				<List>
-					{users.map((user) => (
+					{users && users.map((user) => (
 						<ListItem key={user.id} sx={{
 								transition: 'box-shadow 0.3s ease-in-out',
 								'&:hover': {

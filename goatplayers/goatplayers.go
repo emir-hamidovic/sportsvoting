@@ -58,21 +58,21 @@ func InsertGoatPlayerStats(playerIds map[string]bool, db database.Database) {
 		if goatPlayer.ID != "" {
 			_, err := db.InsertGOATPlayer(goatPlayer)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				time.Sleep(4 * time.Second)
 				continue
 			}
 
 			_, err = db.InsertGOATStats(goatStatsRegular)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				time.Sleep(4 * time.Second)
 				continue
 			}
 
 			_, err = db.InsertGOATStats(goatStatsPlayoffs)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				time.Sleep(4 * time.Second)
 				continue
 			}
@@ -86,7 +86,7 @@ func scrapePlayerInfo(playerID string) (databasestructs.GoatPlayers, databasestr
 	var goatPlayer databasestructs.GoatPlayers
 	var goatStatsRegular, goatStatsPlayoffs databasestructs.GoatStats
 	url := fmt.Sprintf("https://www.basketball-reference.com/players/%s/%s.html", string(playerID[0]), playerID)
-	fmt.Println(url)
+	log.Println(url)
 	doc, err := request.GetDocumentFromURL(url)
 	if err != nil {
 		log.Println(err)
@@ -101,7 +101,7 @@ func scrapePlayerInfo(playerID string) (databasestructs.GoatPlayers, databasestr
 	doc.Find("div#meta h1 span").Each(func(i int, s *goquery.Selection) {
 		goatPlayer.Name = s.Text()
 	})
-	fmt.Println(goatPlayer.Name)
+	log.Println(goatPlayer.Name)
 
 	doc.Find("div#meta p").Each(func(i int, s *goquery.Selection) {
 		if strings.Contains(s.Text(), "Experience") {
@@ -251,19 +251,19 @@ func UpdateActiveGOATStats(db database.Database) error {
 		if goatPlayer.ID != "" {
 			_, err = db.UpdateGOATPlayer(goatPlayer)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				time.Sleep(4 * time.Second)
 				continue
 			}
 
 			_, err := db.UpdateGOATStats(goatStatsRegular)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			}
 
 			_, err = db.UpdateGOATStats(goatStatsPlayoffs)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			}
 
 			time.Sleep(4 * time.Second)

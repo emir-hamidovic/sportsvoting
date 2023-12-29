@@ -1,6 +1,9 @@
 services:
   api:
-    image: emirhamidovic/sportsvoting-api:master
+    #image: emirhamidovic/sportsvoting-api:master
+    build:
+      context: .
+      dockerfile: Dockerfile
     env_file:
       - .env
     ports:
@@ -8,6 +11,7 @@ services:
     depends_on:
       - migrate
     volumes:
+      - image-volume:/usr/share/nginx/html
       - image-volume:/app/shared
   db:
     image: mysql:8.0.27
@@ -27,12 +31,13 @@ services:
     depends_on:
       - db
   frontend:
-    image: emirhamidovic/sportsvoting-frontend:master
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
     ports:
       - 80:80
-    volumes:
-      - /app/node_modules
-      - image-volume:/usr/share/nginx/html
     depends_on:
       - api
 volumes:
