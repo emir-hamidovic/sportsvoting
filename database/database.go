@@ -21,6 +21,7 @@ type Database interface {
 	UserOperations
 	GoatOperations
 	SyncOperations
+	CloseConnection()
 }
 
 type PlayerOperations interface {

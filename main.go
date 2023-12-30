@@ -102,10 +102,30 @@ func main() {
 	}
 
 	var err error
-	db, err = database.NewDB(database.Config{DbType: "mysql", DbName: "nba", Addr: db_addr})
-	if err != nil {
-		log.Fatal(err)
+	retries := 10
+	delayTime := 5 * time.Second
+
+	for i := 0; i < retries; i++ {
+		log.Println("Attempting to connect to database")
+
+		db, err = database.NewDB(database.Config{DbType: "mysql", DbName: "nba", Addr: db_addr})
+		if err == nil {
+			break
+		}
+
+		log.Printf("Couldn't connect to databse due to: %v\n", err)
+
+		if i < retries {
+			log.Printf("Retrying in %v ... \n", delayTime)
+			time.Sleep(delayTime)
+		}
 	}
+
+	if db == nil {
+		log.Fatalf("Couldn't connect to database after %d retries, exiting!\n", retries)
+	}
+
+	defer db.CloseConnection()
 
 	err = db.CreateAdminUser()
 	if err != nil {
