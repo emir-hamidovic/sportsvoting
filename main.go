@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -67,30 +68,30 @@ func RunUpdate(db database.Database, ctx context.Context) {
 	}
 }
 
-func isSyncNeeded(db database.Database) bool {
-	syncTime, err := db.GetLastSyncTimeFromDB()
+func isSyncNeeded(db database.Database) (bool, error) {
+	syncTime, err := db.GetLastSyncTime("Regular")
 	if err != nil {
 		log.Println(err)
-		return true
+		return true, err
 	}
 
 	threshold := 10 * 24 * time.Hour
 	timeDiff := time.Since(syncTime)
 
-	return timeDiff > threshold
+	return timeDiff > threshold, nil
 }
 
-func isGOATSyncNeeded(db database.Database) bool {
-	syncTime, err := db.GetGOATLastSyncTimeFromDB()
+func isGOATSyncNeeded(db database.Database) (bool, error) {
+	syncTime, err := db.GetLastSyncTime("GOAT")
 	if err != nil {
 		log.Println(err)
-		return true
+		return true, err
 	}
 
 	threshold := 10 * 24 * time.Hour
 	timeDiff := time.Since(syncTime)
 
-	return timeDiff > threshold
+	return timeDiff > threshold, nil
 }
 
 var db database.Database
@@ -132,17 +133,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if isSyncNeeded(db) {
+	isSyncNeeded, errSync := isSyncNeeded(db)
+	if isSyncNeeded {
 		err = InsertTeamAndPlayerInfo(db, players.GetEndYearOfTheSeason())
 		if err != nil {
 			log.Fatal(err)
 			return
 		}
 
-		db.UpdateLastSyncTimeInDB(time.Now())
+		if errSync == sql.ErrNoRows {
+			db.InsertLastSyncTime(time.Now(), "Regular")
+		} else {
+			db.UpdateLastSyncTime(time.Now(), "Regular")
+		}
 	}
 
-	if isGOATSyncNeeded(db) {
+	isSyncNeeded, errSync = isGOATSyncNeeded(db)
+	if isSyncNeeded {
 		go func() {
 			playerIDs := goatplayers.GetGoatPlayersList()
 			goatplayers.InsertGoatPlayerStats(playerIDs, db)
@@ -165,7 +172,11 @@ func main() {
 				return
 			}
 
-			db.UpdateGOATLastSyncTimeInDB(time.Now())
+			if errSync == sql.ErrNoRows {
+				db.InsertLastSyncTime(time.Now(), "GOAT")
+			} else {
+				db.UpdateLastSyncTime(time.Now(), "GOAT")
+			}
 		}()
 	}
 
