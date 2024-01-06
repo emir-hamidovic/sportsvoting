@@ -22,6 +22,7 @@ form {
     font-size: 12px;
     font-family: 'Lato';
     margin-top: 1rem;
+    color: black;
   }
   
   button[type="submit"] {

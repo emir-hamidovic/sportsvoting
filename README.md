@@ -25,3 +25,17 @@ After that, you can run the project with a simple
 go build
 ./sportsvoting
 ```
+
+To run the frontend, in a separate terminal call:
+
+```
+npm run start
+```
+
+You can also run this app with docker compose with a simple call to:
+
+```
+docker compose up -d
+```
+
+Wait for it to start up, and then, find the IP address of the frontend service, enter it in the URL and the application should be up and running

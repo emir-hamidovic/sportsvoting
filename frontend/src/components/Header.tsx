@@ -52,7 +52,9 @@ function Header() {
 		<header className="header">
 			<div className='header-logo-styling'>
 			 <img src={Logo} className="header-logo" />
-			<Link to="/"> <h1 className="text-3xl">HoopsVote</h1></Link>
+			 <Link to="/">
+ 				 <h1 className="text-3xl" style={{ color: 'white' }}>HoopsVote</h1>
+			</Link>
 			</div>
 			<div className="header-buttons">
 				{auth?.accessToken ? (

@@ -1,0 +1,82 @@
+/* Add this to your CSS file (e.g., Login.css) */
+
+section {
+    margin-top: 10rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 65vh;
+    background: transparent;
+  }
+  
+  h1 {
+    color: #333; /* Change the color as needed */
+  }
+  
+   form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 200px;
+  
+  }
+  
+  label {
+    margin-bottom: 5px;
+    color: #333; /* Change the color as needed */
+  }
+  
+  input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  button {
+    display: block;
+    padding: 4px 12px 12px 12px;
+    border-radius: 25px;
+    border: none;
+    color: #fff;
+    background-color: #1D63FF;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 35px;
+  }
+  
+  .errmsg {
+    color: #ff0000; /* Red color for error messages, change as needed */
+  }
+  
+  .offscreen {
+    position: absolute;
+    left: -9999px;
+  }
+  
+ 
+p {
+    text-align: center; /* Center the text within the paragraph */
+    font-size: 14px; /* Adjust the font size as needed */
+    margin-top: 5rem; /* Add some top margin for spacing */
+  }
+  
+  .line {
+    display: block; /* Change the display property as needed */
+    text-align: center; /* Center the link within the paragraph */
+  }
+  
+  /* Style the link */
+  .line a {
+    color: #007bff; /* Blue color, change as needed */
+    text-decoration: none; /* Remove the default underline */
+    font-weight: bold; /* Add bold font weight */
+  }
+  
+  /* Style the link on hover */
+  .line a:hover {
+    text-decoration: underline; /* Underline on hover */
+  }

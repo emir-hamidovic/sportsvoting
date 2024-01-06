@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import useAuth from '../hooks/use-auth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axiosInstance from '../utils/axios-instance';
+import '../css/Login.css';
 
 const Login = () => {
 	const { setAuth, persist, setPersist } = useAuth();
