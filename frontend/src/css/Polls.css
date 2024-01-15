@@ -1,0 +1,85 @@
+.polls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px; /* Adjust the gap between columns */
+}
+
+.poll-details p {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+.polls {
+    padding: 20px;
+    width: 60%;
+    justify-content: center;
+}
+
+.poll {
+    display: flex;
+    flex-direction: column; /* Change to column to stack elements vertically */
+    align-items: center; /* Center elements in column */
+    background-color: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.poll:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+}
+
+.poll-image{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.poll-image img {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 15px; /* Add margin below image */
+    align-self: center;
+}
+
+.poll-details {
+    text-align: center; /* Center text in column */
+}
+
+.poll-details h2 {
+    margin-top: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.polls h1 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 25px;
+}
+
+.poll-actions {
+    display: flex;
+    gap: 10px; /* Adjust the gap between buttons */
+}
+
+.poll-actions button {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.poll-actions button:hover {
+    background-color: #0069d9;
+}

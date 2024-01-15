@@ -1,0 +1,31 @@
+.centered-polls {
+    display: flex;
+    justify-content: center;
+    height: 100vh; /* Set the height of the container to the full viewport height */
+  }
+
+ .createPollText p{
+    text-align: center;
+    font-size: 14px;
+    margin-top: 0.5rem;
+}
+
+.createPollText{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column; /* Stack elements vertically */
+}
+
+  button {
+    display: block;
+    padding: 4px 12px 12px 12px;
+    border-radius: 25px;
+    border: none;
+    color: #fff;
+    background-color: #1D63FF;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    font-size: 16px;
+}
+  
