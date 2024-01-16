@@ -75,7 +75,7 @@ function Header() {
 				) : (
 					<React.Fragment>
 						<div className="search-bar">
-						<SearchBar></SearchBar>
+							<SearchBar></SearchBar>
 						</div>
 						<Link to="/login">Login</Link>
 						<Link to="/signup">Sign up</Link>

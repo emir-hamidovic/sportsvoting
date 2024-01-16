@@ -1,6 +1,6 @@
 /* ./src/SearchBar.css */
 
-.searchbar-form form {
+.search-bar form {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -9,7 +9,7 @@
     height: 30px;
   }
   
-.searchbar-form input[type="text"] {
+.search-bar input[type="text"] {
   padding: 0.5rem;
   border-radius: 0.25rem;
   border: none;
@@ -25,7 +25,7 @@
   color: black;
 }
   
-.searchbar-form button[type="submit"] {
+.search-bar button[type="submit"] {
   padding: 0.5rem;
   background-color: #007bff;
   color: #fff;

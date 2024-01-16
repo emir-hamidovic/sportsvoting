@@ -26,7 +26,7 @@ const SearchBar = () => {
   }
 
   return (
-    <form className='searchbar-form'>
+    <form>
       <input 
         type="text" 
         placeholder="🔍 Search..."
