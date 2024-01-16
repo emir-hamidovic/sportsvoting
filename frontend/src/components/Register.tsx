@@ -3,6 +3,7 @@ import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icon
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link } from "react-router-dom";
 import axiosInstance from "../utils/axios-instance";
+import '../css/Login.css';
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -112,7 +113,7 @@ const Register = () => {
 				<section>
 					<p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
 					<h1>Register</h1>
-					<form onSubmit={handleSubmit}>
+					<form onSubmit={handleSubmit} className="login-form">
 						<label htmlFor="username">
 							Username:
 							<FontAwesomeIcon icon={faCheck} className={validName ? "valid" : "hide"} />

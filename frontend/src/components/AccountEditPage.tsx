@@ -14,6 +14,7 @@ import {
 import { useParams } from 'react-router-dom';
 import useAuth from '../hooks/use-auth';
 import axiosInstance from '../utils/axios-instance';
+import '../css/AccountEdit.css';
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -127,7 +128,7 @@ const AccountEditPage: React.FC = () => {
 	};
 	
 	return (
-		<Container maxWidth="lg">
+		<Container maxWidth="lg" className='container'>
 			<Paper elevation={3} sx={{ padding: 3 }}>
 				<Grid container spacing={3}>
 					<Grid item md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

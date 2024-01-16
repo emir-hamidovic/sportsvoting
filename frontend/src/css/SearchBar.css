@@ -1,6 +1,6 @@
 /* ./src/SearchBar.css */
 
-form {
+.searchbar-form form {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -9,31 +9,31 @@ form {
     height: 30px;
   }
   
-  input[type="text"] {
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    border: none;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    width: 100%;
-    max-width: 250px;
-    margin-right: 0.5rem;
-    height: 30px;
-    font-size: 12px;
-    font-family: 'Lato';
-    margin-top: 1rem;
-    color: black;
-  }
+.searchbar-form input[type="text"] {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 250px;
+  margin-right: 0.5rem;
+  height: 30px;
+  font-size: 12px;
+  font-family: 'Lato';
+  margin-top: 1rem;
+  color: black;
+}
   
-  button[type="submit"] {
-    padding: 0.5rem;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    height: 30px;
-    font-size: 12px;
-    font-family: 'Lato';
-  }
+.searchbar-form button[type="submit"] {
+  padding: 0.5rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  height: 30px;
+  font-size: 12px;
+  font-family: 'Lato';
+}
   

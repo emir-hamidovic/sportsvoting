@@ -100,7 +100,7 @@ a, a:visited {
 	color: #fff;
 }
 
-input[type="text"], input[type="password"], input[type="email"], button, textarea {
+button, textarea {
 	padding: 0.5rem;
     border-radius: 0.25rem;
     border: none;
