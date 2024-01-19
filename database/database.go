@@ -22,6 +22,7 @@ type Database interface {
 	GoatOperations
 	SyncOperations
 	CloseConnection()
+	GetDB() *sql.DB
 }
 
 type PlayerOperations interface {

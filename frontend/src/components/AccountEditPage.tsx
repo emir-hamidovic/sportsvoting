@@ -128,7 +128,7 @@ const AccountEditPage: React.FC = () => {
 	};
 	
 	return (
-		<Container maxWidth="lg" className='container'>
+		<Container maxWidth="lg">
 			<Paper elevation={3} sx={{ padding: 3 }}>
 				<Grid container spacing={3}>
 					<Grid item md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

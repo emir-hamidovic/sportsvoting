@@ -23,6 +23,7 @@ WORKDIR /
 
 COPY --from=build-stage /sportsvoting /sportsvoting
 COPY --from=build-stage /app/*.ed* /
+COPY --from=build-stage /app/migrations /migrations/
 COPY --from=build-stage /app/shared /app/
 
 EXPOSE 8080

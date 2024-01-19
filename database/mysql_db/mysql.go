@@ -37,3 +37,7 @@ func NewDB(dbname string, addr string) (*MySqlDB, error) {
 func (m *MySqlDB) CloseConnection() {
 	m.db.Close()
 }
+
+func (m *MySqlDB) GetDB() *sql.DB {
+	return m.db
+}
