@@ -62,7 +62,9 @@ func RunUpdate(db database.Database, ctx context.Context) {
 func isSyncNeeded(db database.Database, syncType string) (bool, error) {
 	syncTime, err := db.GetLastSyncTime(syncType)
 	if err != nil {
-		log.Println(err)
+		if err != sql.ErrNoRows {
+			log.Println(err)
+		}
 		return true, err
 	}
 
@@ -170,7 +172,7 @@ func InsertDefaultPolls(db database.Database) {
 }
 
 func SetupSyncSchedules(db database.Database) {
+	InsertDefaultPolls(db)
 	ScheduleNewSeasonSync(db)
 	ScheduleGOATStatsUpdate(db)
-	InsertDefaultPolls(db)
 }

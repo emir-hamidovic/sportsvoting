@@ -30,7 +30,7 @@ func main() {
 			break
 		}
 
-		log.Printf("Couldn't connect to databse due to: %v\n", err)
+		log.Printf("Couldn't connect to database due to: %v\n", err)
 
 		if i < retries {
 			log.Printf("Retrying in %v ... \n", delayTime)
@@ -54,8 +54,8 @@ func main() {
 		log.Fatalf("Error creating admin user: %v", err)
 	}
 
-	go syncer.SyncRegular(db)
-	go syncer.SyncGOAT(db)
+	syncer.SyncRegular(db)
+	syncer.SyncGOAT(db)
 	syncer.SetupSyncSchedules(db)
 
 	http.StartServer(db)
